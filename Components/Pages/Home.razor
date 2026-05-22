@@ -1,0 +1,231 @@
+@page "/"
+@rendermode InteractiveServer
+@using Concert_Viewer.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ConcertsContext> DbContextFactory
+
+<PageTitle>Concert Viewer</PageTitle>
+
+<div class="home-shell">
+    <section class="hero">
+        <p class="eyebrow">Concert Viewer</p>
+        <h1>Browse concerts by date</h1>
+        <p class="hero-copy">
+            Pick a date from <code>canonical_events</code> and review every event scheduled for that day.
+        </p>
+    </section>
+
+    <section class="toolbar">
+        <label class="field" for="event-date">
+            <span class="field-label">Event date</span>
+            <select id="event-date" class="date-select" value="@selectedDate" @onchange="OnDateChanged" disabled="@isLoadingDates">
+                @if (availableDates.Count == 0)
+                {
+                    <option value="">No dates found</option>
+                }
+                else
+                {
+                    @foreach (var date in availableDates)
+                    {
+                        <option value="@date.Value">@date.Label</option>
+                    }
+                }
+            </select>
+        </label>
+
+        <div class="summary-card">
+            <span class="summary-label">Events shown</span>
+            <strong>@events.Count</strong>
+        </div>
+    </section>
+
+    @if (loadError is not null)
+    {
+        <div class="message error-message">@loadError</div>
+    }
+    else if (isLoadingDates || isLoadingEvents)
+    {
+        <div class="message loading-message">Loading concert data...</div>
+    }
+    else if (string.IsNullOrWhiteSpace(selectedDate))
+    {
+        <div class="message">Select a date to view events.</div>
+    }
+    else if (events.Count == 0)
+    {
+        <div class="message">No events were found for @FormatDateLabel(selectedDate).</div>
+    }
+    else
+    {
+        <FluentDataGrid TGridItem="EventListItem"
+                        Items="@events.AsQueryable()"
+                        DisplayMode="DataGridDisplayMode.Table"
+                        MultiLine="true"
+                        GenerateHeader="GenerateHeaderOption.Sticky"
+                        ResizableColumns="true"
+                        RowSize="DataGridRowSize.Medium"
+                        Class="events-grid">
+            <PropertyColumn Property="@(item => item.EventTitle)" Title="Title" Sortable="true" />
+            <TemplateColumn Title="Image">
+                @if (!string.IsNullOrWhiteSpace(context.ImageUrl))
+                {
+                    <a href="@context.ImageUrl" target="_blank" rel="noreferrer" class="image-link">
+                        <img src="@context.ImageUrl" alt="@context.EventTitle" class="event-image" />
+                    </a>
+                }
+                else
+                {
+                    <span class="muted-text">No image</span>
+                }
+            </TemplateColumn>
+            <PropertyColumn Property="@(item => item.EventStartTime)" Title="Start" Sortable="true" />
+            <PropertyColumn Property="@(item => item.Description)" Title="Description" />
+            <PropertyColumn Property="@(item => item.ArtistsDisplay)" Title="Artists" />
+        </FluentDataGrid>
+    }
+</div>
+
+@code {
+    private List<DateOption> availableDates = [];
+    private List<EventListItem> events = [];
+    private string? loadError;
+    private string? selectedDate;
+    private bool isLoadingDates = true;
+    private bool isLoadingEvents;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAvailableDatesAsync();
+    }
+
+    private async Task LoadAvailableDatesAsync()
+    {
+        isLoadingDates = true;
+        loadError = null;
+
+        try
+        {
+            await using var db = await DbContextFactory.CreateDbContextAsync();
+
+            var dates = await db.CanonicalEvents
+                .AsNoTracking()
+                .Where(e => !string.IsNullOrWhiteSpace(e.EventDate))
+                .Select(e => e.EventDate)
+                .Distinct()
+                .OrderByDescending(date => date)
+                .ToListAsync();
+
+            availableDates = dates
+                .Select(date => new DateOption(date, FormatDateLabel(date)))
+                .ToList();
+
+            selectedDate = availableDates.FirstOrDefault()?.Value;
+
+            if (!string.IsNullOrWhiteSpace(selectedDate))
+            {
+                await LoadEventsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Unable to load available dates: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingDates = false;
+        }
+    }
+
+    private async Task OnDateChanged(ChangeEventArgs args)
+    {
+        selectedDate = args.Value?.ToString();
+        await LoadEventsAsync();
+    }
+
+    private async Task LoadEventsAsync()
+    {
+        events = [];
+        loadError = null;
+
+        if (string.IsNullOrWhiteSpace(selectedDate))
+        {
+            return;
+        }
+
+        isLoadingEvents = true;
+
+        try
+        {
+            await using var db = await DbContextFactory.CreateDbContextAsync();
+
+            var matchedEvents = await db.CanonicalEvents
+                .AsNoTracking()
+                .Include(e => e.EventArtists)
+                .ThenInclude(ea => ea.Artist)
+                .Where(e => e.EventDate == selectedDate)
+                .OrderBy(e => e.EventStartTime)
+                .ThenBy(e => e.EventTitle)
+                .ToListAsync();
+
+            events = matchedEvents
+                .Select(e => new EventListItem
+                {
+                    Id = e.Id,
+                    EventTitle = e.EventTitle ?? "Untitled event",
+                    EventStartTime = string.IsNullOrWhiteSpace(e.EventStartTime) ? "TBA" : e.EventStartTime,
+                    Description = string.IsNullOrWhiteSpace(e.Description) ? "No description available." : e.Description,
+                    ImageUrl = e.ImageUrl,
+                    ArtistsDisplay = FormatArtists(e)
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Unable to load events for {FormatDateLabel(selectedDate)}: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingEvents = false;
+        }
+    }
+
+    private static string FormatDateLabel(string? rawDate)
+    {
+        return DateOnly.TryParse(rawDate, out var parsedDate)
+            ? parsedDate.ToString("dddd, dd MMMM yyyy")
+            : rawDate ?? string.Empty;
+    }
+
+    private static string FormatArtists(Data.Entities.CanonicalEvent concertEvent)
+    {
+        var artists = concertEvent.EventArtists
+            .OrderBy(ea => ea.BillingPosition ?? int.MaxValue)
+            .ThenBy(ea => ea.Artist?.Name)
+            .Select(ea => ea.Artist?.Name)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct()
+            .Cast<string>()
+            .ToList();
+
+        return artists.Count > 0
+            ? string.Join(", ", artists)
+            : "No artists listed";
+    }
+
+    private sealed record DateOption(string Value, string Label);
+
+    private sealed class EventListItem
+    {
+        public int Id { get; init; }
+
+        public string EventTitle { get; init; } = string.Empty;
+
+        public string? ImageUrl { get; init; }
+
+        public string EventStartTime { get; init; } = string.Empty;
+
+        public string Description { get; init; } = string.Empty;
+
+        public string ArtistsDisplay { get; init; } = string.Empty;
+    }
+}

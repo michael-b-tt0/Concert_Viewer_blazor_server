@@ -1,0 +1,7 @@
+/.vs
+/appsettings.Development.json
+/appsettings.json
+/bin
+/concerts.db
+/obj
+/schema.sql

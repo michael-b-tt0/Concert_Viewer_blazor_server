@@ -1,0 +1,139 @@
+.home-shell {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 3rem;
+}
+
+.hero {
+    padding: 2rem;
+    border-radius: 1.5rem;
+    background:
+        radial-gradient(circle at top right, rgba(255, 197, 87, 0.35), transparent 30%),
+        linear-gradient(135deg, #10212f, #203a43 55%, #355c49);
+    color: #f7fbfc;
+    box-shadow: 0 18px 45px rgba(16, 33, 47, 0.2);
+}
+
+.eyebrow {
+    margin: 0 0 0.5rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: #ffd78f;
+}
+
+.hero h1 {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.hero-copy {
+    margin: 0.85rem 0 0;
+    max-width: 52rem;
+    line-height: 1.6;
+    color: rgba(247, 251, 252, 0.9);
+}
+
+.toolbar {
+    display: flex;
+    gap: 1rem;
+    align-items: end;
+    justify-content: space-between;
+    margin: 1.5rem 0;
+    flex-wrap: wrap;
+}
+
+.field {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.field-label,
+.summary-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #32505a;
+}
+
+.date-select {
+    min-width: min(24rem, 80vw);
+    padding: 0.8rem 1rem;
+    border: 1px solid #bfd1d7;
+    border-radius: 0.85rem;
+    background: #fff;
+    font: inherit;
+    color: #112028;
+}
+
+.summary-card {
+    min-width: 8rem;
+    padding: 0.9rem 1rem;
+    border-radius: 1rem;
+    background: #edf6f8;
+    color: #112028;
+    display: grid;
+    gap: 0.25rem;
+    box-shadow: inset 0 0 0 1px #d7e5ea;
+}
+
+.summary-card strong {
+    font-size: 1.6rem;
+}
+
+.message {
+    padding: 1rem 1.15rem;
+    border-radius: 1rem;
+    background: #f3f7f8;
+    color: #28414b;
+}
+
+.loading-message {
+    background: #eef7ea;
+}
+
+.error-message {
+    background: #fff2f0;
+    color: #8f2f23;
+}
+
+.events-grid {
+    width: 100%;
+}
+
+.image-link {
+    display: inline-flex;
+}
+
+.event-image {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 0.85rem;
+    box-shadow: 0 10px 20px rgba(17, 32, 40, 0.15);
+}
+
+.muted-text {
+    color: #667a83;
+}
+
+@media (max-width: 768px) {
+    .home-shell {
+        padding: 1.25rem 1rem 2rem;
+    }
+
+    .hero {
+        padding: 1.5rem;
+    }
+
+    .date-select {
+        min-width: 100%;
+    }
+
+    .toolbar {
+        align-items: stretch;
+    }
+
+    .summary-card {
+        width: 100%;
+    }
+}
