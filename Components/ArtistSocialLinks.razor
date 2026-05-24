@@ -1,0 +1,45 @@
+@if (Embeds.Count > 0 || FallbackLinks.Count > 0)
+{
+    <div class="artist-socials">
+        @if (Embeds.Count > 0)
+        {
+            @foreach (var embed in Embeds)
+            {
+                <SocialEmbedHost ArtistName="@ArtistName" Embed="@embed" />
+            }
+        }
+
+        @if (FallbackLinks.Count > 0)
+        {
+            <div class="social-link-list">
+                @foreach (var socialLink in FallbackLinks)
+                {
+                    <a href="@socialLink.Url"
+                       target="_blank"
+                       rel="noreferrer"
+                       class="social-link-chip">
+                        @SocialLinkResolver.GetDisplayLabel(socialLink)
+                    </a>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string ArtistName { get; set; } = string.Empty;
+
+    [Parameter]
+    public IReadOnlyList<SocialLinkListItem> SocialLinks { get; set; } = [];
+
+    private List<SocialEmbedListItem> Embeds { get; set; } = [];
+
+    private List<SocialLinkListItem> FallbackLinks { get; set; } = [];
+
+    protected override void OnParametersSet()
+    {
+        Embeds = SocialLinkResolver.GetEmbeds(SocialLinks);
+        FallbackLinks = SocialLinkResolver.GetNonEmbeddableLinks(SocialLinks);
+    }
+}

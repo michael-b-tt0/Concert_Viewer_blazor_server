@@ -1,0 +1,17 @@
+<div class="embed-card">
+    <iframe src="@Embed.EmbedUrl"
+            title="@($"Spotify player for {ArtistName}")"
+            class="embed-frame"
+            loading="lazy"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            allowfullscreen></iframe>
+    
+</div>
+
+@code {
+    [Parameter]
+    public string ArtistName { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public SocialEmbedListItem Embed { get; set; } = default!;
+}

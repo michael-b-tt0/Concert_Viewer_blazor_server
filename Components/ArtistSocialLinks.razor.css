@@ -1,0 +1,27 @@
+.artist-socials {
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 0.15rem;
+}
+
+.social-link-list {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.social-link-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: #e8f2f5;
+    color: #18495c;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.social-link-chip:hover {
+    background: #d7eaef;
+}

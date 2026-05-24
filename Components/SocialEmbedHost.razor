@@ -1,0 +1,30 @@
+@switch (Embed.Provider)
+{
+    case SocialLinkProvider.Spotify:
+        <SpotifyEmbed ArtistName="@ArtistName" Embed="@Embed" />
+        break;
+    case SocialLinkProvider.SoundCloud:
+        <SoundCloudEmbed ArtistName="@ArtistName" Embed="@Embed" />
+        break;
+    case SocialLinkProvider.AppleMusic:
+        <AppleMusicEmbed ArtistName="@ArtistName" Embed="@Embed" />
+        break;
+    case SocialLinkProvider.Bandcamp:
+        <BandcampEmbed ArtistName="@ArtistName" Embed="@Embed" />
+        break;
+    default:
+        <div class="embed-fallback-card">
+            <a href="@Embed.Url" target="_blank" rel="noreferrer" class="embed-fallback-link">
+                Open @Embed.Platform
+            </a>
+        </div>
+        break;
+}
+
+@code {
+    [Parameter]
+    public string ArtistName { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public SocialEmbedListItem Embed { get; set; } = default!;
+}

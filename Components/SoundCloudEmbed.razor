@@ -1,0 +1,17 @@
+<div class="embed-card">
+    <iframe src="@Embed.EmbedUrl"
+            title="@($"SoundCloud player for {ArtistName}")"
+            class="embed-frame soundcloud-frame"
+            loading="lazy"
+            allow="autoplay"
+            allowfullscreen></iframe>
+    
+</div>
+
+@code {
+    [Parameter]
+    public string ArtistName { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public SocialEmbedListItem Embed { get; set; } = default!;
+}

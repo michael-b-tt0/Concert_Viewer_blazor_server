@@ -1,0 +1,21 @@
+<div class="embed-card">
+    <iframe src="@Embed.EmbedUrl"
+            title="@($"Bandcamp player for {ArtistName}")"
+            class="embed-frame bandcamp-frame"
+            loading="lazy"
+            seamless></iframe>
+    <a href="@Embed.Url"
+       target="_blank"
+       rel="noreferrer"
+       class="embed-open-link">
+        Open in Bandcamp
+    </a>
+</div>
+
+@code {
+    [Parameter]
+    public string ArtistName { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public SocialEmbedListItem Embed { get; set; } = default!;
+}

@@ -1,0 +1,27 @@
+.embed-card {
+    display: grid;
+    gap: 0.35rem;
+    max-width: 360px;
+}
+
+.embed-frame {
+    width: 100%;
+    min-height: 152px;
+    border: 0;
+    border-radius: 16px;
+}
+
+.soundcloud-frame {
+    min-height: 166px;
+}
+
+.embed-open-link {
+    color: #0b6b43;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.embed-open-link:hover {
+    text-decoration: underline;
+}

@@ -1,0 +1,14 @@
+.embed-fallback-card {
+    max-width: 360px;
+}
+
+.embed-fallback-link {
+    color: #0b6b43;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.embed-fallback-link:hover {
+    text-decoration: underline;
+}

@@ -1,0 +1,28 @@
+.embed-card {
+    display: grid;
+    gap: 0.35rem;
+    max-width: 420px;
+}
+
+.embed-frame {
+    width: 100%;
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: transparent;
+}
+
+.apple-music-frame {
+    min-height: 450px;
+}
+
+.embed-open-link {
+    color: #0b6b43;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.embed-open-link:hover {
+    text-decoration: underline;
+}

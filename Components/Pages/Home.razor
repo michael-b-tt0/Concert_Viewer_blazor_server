@@ -99,17 +99,7 @@
                                 }
                                 @if (artist.SocialLinks.Count > 0)
                                 {
-                                    <div class="artist-socials">
-                                        @foreach (var socialLink in artist.SocialLinks)
-                                        {
-                                            <a href="@socialLink.Url"
-                                               target="_blank"
-                                               rel="noreferrer"
-                                               class="social-link-chip">
-                                                @socialLink.Platform
-                                            </a>
-                                        }
-                                    </div>
+                                    <ArtistSocialLinks ArtistName="@artist.Name" SocialLinks="@artist.SocialLinks" />
                                 }
                             </li>
                         }
@@ -292,8 +282,9 @@
             return parsedLinks
                 .Where(link => !string.IsNullOrWhiteSpace(link.Url))
                 .Select(link => new SocialLinkListItem(
-                    NormalizePlatform(link.Platform, link.Url),
-                    link.Url!.Trim()))
+                    SocialLinkResolver.NormalizePlatform(link.Platform, link.Url),
+                    link.Url!.Trim(),
+                    SocialLinkResolver.DetectProvider(link.Url)))
                 .Where(link => !string.IsNullOrWhiteSpace(link.Platform))
                 .Distinct()
                 .ToList();
@@ -302,23 +293,6 @@
         {
             return [];
         }
-    }
-
-    private static string NormalizePlatform(string? platform, string? url)
-    {
-        var cleanedPlatform = platform?.Trim();
-        if (!string.IsNullOrWhiteSpace(cleanedPlatform) &&
-            !string.Equals(cleanedPlatform, "social network", StringComparison.OrdinalIgnoreCase))
-        {
-            return cleanedPlatform;
-        }
-
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-            return uri.Host.Replace("www.", "", StringComparison.OrdinalIgnoreCase);
-        }
-
-        return "link";
     }
 
     private sealed record DateOption(string Value, string Label);
@@ -339,8 +313,6 @@
     }
 
     private sealed record ArtistListItem(string Name, string? Tags, List<SocialLinkListItem> SocialLinks);
-
-    private sealed record SocialLinkListItem(string Platform, string Url);
 
     private sealed class ArtistSocialLink
     {
