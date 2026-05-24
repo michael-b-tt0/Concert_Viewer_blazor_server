@@ -1,6 +1,7 @@
 @page "/"
 @rendermode InteractiveServer
 @using Concert_Viewer.Data
+@using System.Text.Json
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ConcertsContext> DbContextFactory
 
@@ -79,13 +80,52 @@
                 }
             </TemplateColumn>
             <PropertyColumn Property="@(item => item.EventStartTime)" Title="Start" Sortable="true" />
-            <PropertyColumn Property="@(item => item.Description)" Title="Description" />
-            <PropertyColumn Property="@(item => item.ArtistsDisplay)" Title="Artists" />
+            <PropertyColumn Property="@(item => item.Venue)" Title="Venue" Sortable="true" />
+            <TemplateColumn Title="Artists">
+                @if (context.Artists.Count == 0)
+                {
+                    <span class="muted-text">No artists listed</span>
+                }
+                else
+                {
+                    <ul class="artist-list">
+                        @foreach (var artist in context.Artists)
+                        {
+                            <li class="artist-list-item">
+                                <span class="artist-name">@artist.Name</span>
+                                @if (!string.IsNullOrWhiteSpace(artist.Tags))
+                                {
+                                    <span class="artist-tags">@artist.Tags</span>
+                                }
+                                @if (artist.SocialLinks.Count > 0)
+                                {
+                                    <div class="artist-socials">
+                                        @foreach (var socialLink in artist.SocialLinks)
+                                        {
+                                            <a href="@socialLink.Url"
+                                               target="_blank"
+                                               rel="noreferrer"
+                                               class="social-link-chip">
+                                                @socialLink.Platform
+                                            </a>
+                                        }
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </TemplateColumn>
         </FluentDataGrid>
     }
 </div>
 
 @code {
+    private static readonly JsonSerializerOptions SocialLinkJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     private List<DateOption> availableDates = [];
     private List<EventListItem> events = [];
     private string? loadError;
@@ -173,9 +213,9 @@
                     Id = e.Id,
                     EventTitle = e.EventTitle ?? "Untitled event",
                     EventStartTime = string.IsNullOrWhiteSpace(e.EventStartTime) ? "TBA" : e.EventStartTime,
-                    Description = string.IsNullOrWhiteSpace(e.Description) ? "No description available." : e.Description,
+                    Venue = string.IsNullOrWhiteSpace(e.Venue) ? "Venue TBA" : e.Venue,
                     ImageUrl = e.ImageUrl,
-                    ArtistsDisplay = FormatArtists(e)
+                    Artists = FormatArtists(e)
                 })
                 .ToList();
         }
@@ -196,20 +236,89 @@
             : rawDate ?? string.Empty;
     }
 
-    private static string FormatArtists(Data.Entities.CanonicalEvent concertEvent)
+    private static List<ArtistListItem> FormatArtists(Data.Entities.CanonicalEvent concertEvent)
     {
         var artists = concertEvent.EventArtists
             .OrderBy(ea => ea.BillingPosition ?? int.MaxValue)
             .ThenBy(ea => ea.Artist?.Name)
-            .Select(ea => ea.Artist?.Name)
-            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(FormatArtistDisplay)
+            .Where(display => display is not null)
             .Distinct()
-            .Cast<string>()
+            .Cast<ArtistListItem>()
             .ToList();
 
-        return artists.Count > 0
-            ? string.Join(", ", artists)
-            : "No artists listed";
+        return artists;
+    }
+
+    private static ArtistListItem? FormatArtistDisplay(Data.Entities.EventArtist eventArtist)
+    {
+        var artistName = eventArtist.Artist?.Name;
+        var tags = NormalizeTags(eventArtist.Artist?.ArtistTags);
+
+        if (string.IsNullOrWhiteSpace(artistName))
+        {
+            return null;
+        }
+
+        return new ArtistListItem(artistName, tags, ParseSocialLinks(eventArtist.Artist?.SocialLinks));
+    }
+
+    private static string? NormalizeTags(string? rawTags)
+    {
+        if (string.IsNullOrWhiteSpace(rawTags))
+        {
+            return null;
+        }
+
+        var normalized = rawTags.Trim();
+        return normalized is "[]" or "[ ]" ? null : normalized;
+    }
+
+    private static List<SocialLinkListItem> ParseSocialLinks(string? rawSocialLinks)
+    {
+        if (string.IsNullOrWhiteSpace(rawSocialLinks))
+        {
+            return [];
+        }
+
+        try
+        {
+            var parsedLinks = JsonSerializer.Deserialize<List<ArtistSocialLink>>(rawSocialLinks, SocialLinkJsonOptions);
+            if (parsedLinks is null)
+            {
+                return [];
+            }
+
+            return parsedLinks
+                .Where(link => !string.IsNullOrWhiteSpace(link.Url))
+                .Select(link => new SocialLinkListItem(
+                    NormalizePlatform(link.Platform, link.Url),
+                    link.Url!.Trim()))
+                .Where(link => !string.IsNullOrWhiteSpace(link.Platform))
+                .Distinct()
+                .ToList();
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    private static string NormalizePlatform(string? platform, string? url)
+    {
+        var cleanedPlatform = platform?.Trim();
+        if (!string.IsNullOrWhiteSpace(cleanedPlatform) &&
+            !string.Equals(cleanedPlatform, "social network", StringComparison.OrdinalIgnoreCase))
+        {
+            return cleanedPlatform;
+        }
+
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            return uri.Host.Replace("www.", "", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return "link";
     }
 
     private sealed record DateOption(string Value, string Label);
@@ -224,8 +333,19 @@
 
         public string EventStartTime { get; init; } = string.Empty;
 
-        public string Description { get; init; } = string.Empty;
+        public string Venue { get; init; } = string.Empty;
 
-        public string ArtistsDisplay { get; init; } = string.Empty;
+        public List<ArtistListItem> Artists { get; init; } = [];
+    }
+
+    private sealed record ArtistListItem(string Name, string? Tags, List<SocialLinkListItem> SocialLinks);
+
+    private sealed record SocialLinkListItem(string Platform, string Url);
+
+    private sealed class ArtistSocialLink
+    {
+        public string? Platform { get; init; }
+
+        public string? Url { get; init; }
     }
 }
