@@ -137,6 +137,7 @@ public static class SocialLinkResolver
             SocialLinkProvider.Spotify => TryCreateSpotifyEmbedUrl(link.Url),
             SocialLinkProvider.SoundCloud => TryCreateSoundCloudEmbedUrl(link.Url),
             SocialLinkProvider.Bandcamp => TryCreateBandcampEmbedUrl(link.Url),
+            SocialLinkProvider.Deezer => TryCreateDeezerEmbedUrl(link.Url),
             _ => null
         };
 
@@ -236,5 +237,48 @@ public static class SocialLinkResolver
         }
 
         return segments[0] is "album" or "track";
+    }
+
+    private static string? TryCreateDeezerEmbedUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            !uri.Host.Contains("deezer.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var segments = uri.AbsolutePath
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (segments.Length < 2)
+        {
+            return null;
+        }
+
+        var supportedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "artist",
+            "album",
+            "track",
+            "playlist",
+            "podcast",
+            "episode"
+        };
+
+        var contentTypeIndex = 0;
+        if (segments.Length >= 3 && segments[0].Length == 2)
+        {
+            contentTypeIndex = 1;
+        }
+
+        var contentType = segments[contentTypeIndex];
+        var contentId = segments[contentTypeIndex + 1];
+
+        if (!supportedTypes.Contains(contentType) || string.IsNullOrWhiteSpace(contentId))
+        {
+            return null;
+        }
+
+        return  $"https://widget.deezer.com/widget/auto/{contentType}/{contentId}";
     }
 }
