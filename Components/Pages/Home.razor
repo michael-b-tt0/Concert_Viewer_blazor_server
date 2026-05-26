@@ -89,9 +89,11 @@
                 else
                 {
                     <ul class="artist-list">
-                        @foreach (var artist in context.Artists)
+                        @for (var artistIndex = 0; artistIndex < context.Artists.Count; artistIndex++)
                         {
-                            <li class="artist-list-item">
+                            var artist = context.Artists[artistIndex];
+
+                            <li class="@GetArtistCardClass(artistIndex)">
                                 <span class="artist-name">@artist.Name</span>
                                 @if (!string.IsNullOrWhiteSpace(artist.Tags))
                                 {
@@ -293,6 +295,11 @@
         {
             return [];
         }
+    }
+
+    private static string GetArtistCardClass(int index)
+    {
+        return $"artist-list-item artist-card-tone-{index % 6}";
     }
 
     private sealed record DateOption(string Value, string Label);

@@ -11,7 +11,7 @@
 }
 
 .deezer-frame {
-    min-height: 300px;
+    max-height: 120px;
 }
 
 .embed-open-link {

@@ -6,7 +6,7 @@
 
 .embed-frame {
     width: 100%;
-    min-height: 152px;
+    max-height: 100px;
     border: 0;
     border-radius: 16px;
 }

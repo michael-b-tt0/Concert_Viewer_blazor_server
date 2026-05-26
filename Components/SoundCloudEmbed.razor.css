@@ -12,7 +12,7 @@
 }
 
 .soundcloud-frame {
-    min-height: 166px;
+    max-height: 100px;
 }
 
 .embed-open-link {

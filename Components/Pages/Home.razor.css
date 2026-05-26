@@ -121,17 +121,54 @@
     padding: 0;
     list-style: none;
     display: grid;
-    gap: 0.45rem;
+    gap: 0.75rem;
 }
 
 .artist-list-item {
     display: grid;
-    gap: 0.15rem;
+    gap: 0.45rem;
+    padding: 0.75rem;
+    border: 1px solid #d7e5ea;
+    border-radius: 0.65rem;
+    background: #fbfdfd;
+    box-shadow: 0 8px 18px rgba(17, 32, 40, 0.08);
+}
+
+.artist-card-tone-0 {
+    background: #f7fbff;
+    border-color: #cfe3f2;
+}
+
+.artist-card-tone-1 {
+    background: #f7fcf4;
+    border-color: #d4e9ca;
+}
+
+.artist-card-tone-2 {
+    background: #fff9f2;
+    border-color: #eedcc4;
+}
+
+.artist-card-tone-3 {
+    background: #fff7f9;
+    border-color: #efcfd9;
+}
+
+.artist-card-tone-4 {
+    background: #f8f7ff;
+    border-color: #d9d4ef;
+}
+
+.artist-card-tone-5 {
+    background: #f5fbfa;
+    border-color: #cce6e1;
 }
 
 .artist-name {
+    display: block;
     font-weight: 700;
     color: #112028;
+    line-height: 1.25;
 }
 
 .artist-tags {

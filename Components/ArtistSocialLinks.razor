@@ -1,3 +1,5 @@
+@inject IHttpClientFactory HttpClientFactory
+
 @if (Embeds.Count > 0 || FallbackLinks.Count > 0)
 {
     <div class="artist-socials">
@@ -34,12 +36,43 @@
     public IReadOnlyList<SocialLinkListItem> SocialLinks { get; set; } = [];
 
     private List<SocialEmbedListItem> Embeds { get; set; } = [];
-
     private List<SocialLinkListItem> FallbackLinks { get; set; } = [];
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        Embeds = SocialLinkResolver.GetEmbeds(SocialLinks);
-        FallbackLinks = SocialLinkResolver.GetNonEmbeddableLinks(SocialLinks);
+        var httpClient = HttpClientFactory.CreateClient("SocialLinks");
+        var tempEmbeds = new List<SocialEmbedListItem>();
+        var tempFallbacks = new List<SocialLinkListItem>();
+
+        foreach (var link in SocialLinks)
+        {
+            if (link.Provider == SocialLinkProvider.Bandcamp)
+            {
+                var embedUrl = await SocialLinkResolver.FetchBandcampEmbedUrlAsync(link.Url, httpClient);
+                if (embedUrl != null)
+                {
+                    tempEmbeds.Add(new SocialEmbedListItem(link.Platform, link.Url, link.Provider, embedUrl));
+                }
+                else
+                {
+                    tempFallbacks.Add(link);
+                }
+            }
+            else
+            {
+                var embed = SocialLinkResolver.TryCreateEmbed(link);
+                if (embed != null)
+                {
+                    tempEmbeds.Add(embed);
+                }
+                else
+                {
+                    tempFallbacks.Add(link);
+                }
+            }
+        }
+
+        Embeds = tempEmbeds;
+        FallbackLinks = tempFallbacks;
     }
 }

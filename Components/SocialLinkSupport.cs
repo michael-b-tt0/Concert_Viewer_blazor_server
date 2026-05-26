@@ -1,3 +1,7 @@
+using System.Collections.Concurrent;
+using System.Net;
+using System.Text.RegularExpressions;
+
 namespace Concert_Viewer.Components;
 
 public enum SocialLinkProvider
@@ -22,6 +26,8 @@ public sealed record SocialEmbedListItem(
 
 public static class SocialLinkResolver
 {
+    private static readonly ConcurrentDictionary<string, Lazy<Task<string?>>> BandcampEmbedUrlCache = new();
+
     public static string NormalizePlatform(string? platform, string? url)
     {
         var cleanedPlatform = platform?.Trim();
@@ -130,12 +136,13 @@ public static class SocialLinkResolver
             .ToList();
     }
 
-    private static SocialEmbedListItem? TryCreateEmbed(SocialLinkListItem link)
+    public static SocialEmbedListItem? TryCreateEmbed(SocialLinkListItem link)
     {
         var embedUrl = link.Provider switch
         {
             SocialLinkProvider.Spotify => TryCreateSpotifyEmbedUrl(link.Url),
             SocialLinkProvider.SoundCloud => TryCreateSoundCloudEmbedUrl(link.Url),
+            SocialLinkProvider.AppleMusic => TryCreateAppleMusicEmbedUrl(link.Url),
             SocialLinkProvider.Bandcamp => TryCreateBandcampEmbedUrl(link.Url),
             SocialLinkProvider.Deezer => TryCreateDeezerEmbedUrl(link.Url),
             _ => null
@@ -279,6 +286,113 @@ public static class SocialLinkResolver
             return null;
         }
 
-        return  $"https://widget.deezer.com/widget/auto/{contentType}/{contentId}";
+        // Deezer artist widgets need the top_tracks variant to render a playable widget.
+        var suffix = string.Equals(contentType, "artist", StringComparison.OrdinalIgnoreCase)
+            ? "/top_tracks"
+            : string.Empty;
+
+        return $"https://widget.deezer.com/widget/auto/{contentType}/{contentId}{suffix}";
+    }
+
+    private static string? TryCreateAppleMusicEmbedUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            !uri.Host.Contains("music.apple.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var segments = uri.AbsolutePath
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (segments.Length < 2)
+        {
+            return null;
+        }
+
+        var contentType = segments[1];
+        var supportedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "album",
+            "song",
+            "playlist"
+        };
+
+        if (!supportedTypes.Contains(contentType))
+        {
+            return null;
+        }
+
+        var builder = new UriBuilder(uri)
+        {
+            Scheme = Uri.UriSchemeHttps,
+            Host = "embed.music.apple.com",
+            Port = -1
+        };
+
+        return builder.Uri.ToString();
+    }
+
+    public static Task<string?> FetchBandcampEmbedUrlAsync(string url, HttpClient httpClient)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            !uri.Host.Contains("bandcamp.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        if (uri.AbsolutePath.Contains("/EmbeddedPlayer/", StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.FromResult<string?>(url);
+        }
+
+        if (!IsBandcampEmbeddablePageUrl(uri))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        var cacheKey = uri.GetLeftPart(UriPartial.Path).ToLowerInvariant();
+        var cachedLookup = BandcampEmbedUrlCache.GetOrAdd(
+            cacheKey,
+            _ => new Lazy<Task<string?>>(
+                () => FetchBandcampEmbedUrlCoreAsync(uri, httpClient),
+                LazyThreadSafetyMode.ExecutionAndPublication));
+
+        return cachedLookup.Value;
+    }
+
+    private static async Task<string?> FetchBandcampEmbedUrlCoreAsync(Uri uri, HttpClient httpClient)
+    {
+        try
+        {
+            var html = await httpClient.GetStringAsync(uri);
+            var match = Regex.Match(
+                html,
+                @"<meta\b(?=[^>]*(?:name|property)=[""']twitter:player[""'])(?=[^>]*content=[""'](?<url>[^""']+)[""'])[^>]*>",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            var embedUrl = WebUtility.HtmlDecode(match.Groups["url"].Value);
+            if (!Uri.TryCreate(embedUrl, UriKind.Absolute, out var embedUri) ||
+                !embedUri.Host.Contains("bandcamp.com", StringComparison.OrdinalIgnoreCase) ||
+                !embedUri.AbsolutePath.Contains("/EmbeddedPlayer/", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return embedUrl.Replace("size=large", "size=small", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
+        catch (TaskCanceledException)
+        {
+            return null;
+        }
     }
 }

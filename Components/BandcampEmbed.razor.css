@@ -11,7 +11,8 @@
 }
 
 .bandcamp-frame {
-    min-height: 472px;
+    height: 80px;
+    min-height: 0;
 }
 
 .embed-open-link {

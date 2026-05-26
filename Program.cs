@@ -10,6 +10,10 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddFluentUIComponents();
+builder.Services.AddHttpClient("SocialLinks", client =>
+{
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; ConcertViewer/1.0)");
+});
 builder.Services.AddDbContextFactory<ConcertsContext>(options =>
     options.UseSqlite($"Data Source={Path.Combine(builder.Environment.ContentRootPath, "concerts.db")}"));
 

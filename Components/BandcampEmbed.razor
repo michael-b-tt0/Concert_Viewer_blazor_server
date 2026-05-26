@@ -2,14 +2,13 @@
     <iframe src="@Embed.EmbedUrl"
             title="@($"Bandcamp player for {ArtistName}")"
             class="embed-frame bandcamp-frame"
+            width="100%"
+            height="80px"
+            frameborder="0"
+            allow="encrypted-media; clipboard-write;"
             loading="lazy"
-            seamless></iframe>
-    <a href="@Embed.Url"
-       target="_blank"
-       rel="noreferrer"
-       class="embed-open-link">
-        Open in Bandcamp
-    </a>
+            seamless>
+    </iframe>
 </div>
 
 @code {
