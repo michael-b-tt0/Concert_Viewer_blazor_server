@@ -116,6 +116,43 @@
     color: #667a83;
 }
 
+.event-title-cell,
+.event-info-cell {
+    display: grid;
+    gap: 0.35rem;
+    line-height: 1.35;
+}
+
+.event-title {
+    font-weight: 700;
+    color: #112028;
+}
+
+.event-location {
+    color: #4b6670;
+}
+
+.event-description {
+    margin: 0;
+    color: #28414b;
+    line-height: 1.45;
+}
+
+.event-link-list {
+    margin: 0.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.25rem;
+}
+
+.event-link-list a {
+    color: #0f6674;
+    font-weight: 700;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.18em;
+}
+
 .artist-list {
     margin: 0;
     padding: 0;

@@ -66,7 +66,13 @@
                         ResizableColumns="true"
                         RowSize="DataGridRowSize.Medium"
                         Class="events-grid">
-            <PropertyColumn Property="@(item => item.EventTitle)" Title="Title" Sortable="true" />
+            <TemplateColumn Title="Title">
+                <div class="event-title-cell">
+                    <span class="event-title">@context.EventTitle</span>
+                    <span class="event-location">@context.Venue</span>
+                    <span class="event-location">@context.City</span>
+                </div>
+            </TemplateColumn>
             <TemplateColumn Title="Image">
                 @if (!string.IsNullOrWhiteSpace(context.ImageUrl))
                 {
@@ -80,7 +86,30 @@
                 }
             </TemplateColumn>
             <PropertyColumn Property="@(item => item.EventStartTime)" Title="Start" Sortable="true" />
-            <PropertyColumn Property="@(item => item.Venue)" Title="Venue" Sortable="true" />
+            <TemplateColumn Title="Info">
+                <div class="event-info-cell">
+                    @if (!string.IsNullOrWhiteSpace(context.Description))
+                    {
+                        <p class="event-description">@context.Description</p>
+                    }
+                    else
+                    {
+                        <span class="muted-text">No description</span>
+                    }
+
+                    @if (context.EventLinks.Count > 0)
+                    {
+                        <ul class="event-link-list">
+                            @foreach (var link in context.EventLinks)
+                            {
+                                <li>
+                                    <a href="@link.Url" target="_blank" rel="noreferrer">@link.Label</a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </TemplateColumn>
             <TemplateColumn Title="Artists">
                 @if (context.Artists.Count == 0)
                 {
@@ -206,6 +235,9 @@
                     EventTitle = e.EventTitle ?? "Untitled event",
                     EventStartTime = string.IsNullOrWhiteSpace(e.EventStartTime) ? "TBA" : e.EventStartTime,
                     Venue = string.IsNullOrWhiteSpace(e.Venue) ? "Venue TBA" : e.Venue,
+                    City = string.IsNullOrWhiteSpace(e.City) ? "City TBA" : e.City,
+                    Description = e.Description,
+                    EventLinks = FormatEventLinks(e),
                     ImageUrl = e.ImageUrl,
                     Artists = FormatArtists(e)
                 })
@@ -240,6 +272,25 @@
             .ToList();
 
         return artists;
+    }
+
+    private static List<EventLinkListItem> FormatEventLinks(Data.Entities.CanonicalEvent concertEvent)
+    {
+        var links = new List<EventLinkListItem>();
+
+        AddEventLink(links, "Dice", concertEvent.DiceUrl);
+        AddEventLink(links, "Songkick", concertEvent.SongkickUrl);
+        AddEventLink(links, "Bandsintown", concertEvent.BandsintownUrl);
+
+        return links;
+    }
+
+    private static void AddEventLink(List<EventLinkListItem> links, string label, string? url)
+    {
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            links.Add(new EventLinkListItem(label, url.Trim()));
+        }
     }
 
     private static ArtistListItem? FormatArtistDisplay(Data.Entities.EventArtist eventArtist)
@@ -345,8 +396,16 @@
 
         public string Venue { get; init; } = string.Empty;
 
+        public string City { get; init; } = string.Empty;
+
+        public string? Description { get; init; }
+
+        public List<EventLinkListItem> EventLinks { get; init; } = [];
+
         public List<ArtistListItem> Artists { get; init; } = [];
     }
+
+    private sealed record EventLinkListItem(string Label, string Url);
 
     private sealed record ArtistListItem(string Name, string? Tags, List<SocialLinkListItem> SocialLinks);
 
