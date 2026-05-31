@@ -1,0 +1,20 @@
+<div class="embed-card">
+    <iframe src="@Embed.EmbedUrl"
+            title="@($"YouTube player for {ArtistName}")"
+            class="embed-frame youtube-frame"
+            width="400"
+            height="150"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            style="border-radius: 12px; box-shadow: 0px 4px 10px rgba(0,0,0,0.5);"
+            loading="lazy"
+            allowfullscreen></iframe>
+</div>
+
+@code {
+    [Parameter]
+    public string ArtistName { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public SocialEmbedListItem Embed { get; set; } = default!;
+}

@@ -252,7 +252,10 @@
             return null;
         }
 
-        return new ArtistListItem(artistName, tags, ParseSocialLinks(eventArtist.Artist?.SocialLinks));
+        return new ArtistListItem(
+            artistName,
+            tags,
+            ParseSocialLinks(eventArtist.Artist?.SocialLinks, eventArtist.Artist?.YouTubeUrl));
     }
 
     private static string? NormalizeTags(string? rawTags)
@@ -266,35 +269,61 @@
         return normalized is "[]" or "[ ]" ? null : normalized;
     }
 
-    private static List<SocialLinkListItem> ParseSocialLinks(string? rawSocialLinks)
+    private static List<SocialLinkListItem> ParseSocialLinks(string? rawSocialLinks, string? youTubeUrl)
     {
-        if (string.IsNullOrWhiteSpace(rawSocialLinks))
-        {
-            return [];
-        }
+        var links = new List<ArtistSocialLink>();
 
-        try
+        if (!string.IsNullOrWhiteSpace(rawSocialLinks))
         {
-            var parsedLinks = JsonSerializer.Deserialize<List<ArtistSocialLink>>(rawSocialLinks, SocialLinkJsonOptions);
-            if (parsedLinks is null)
+            try
             {
-                return [];
+                var parsedLinks = JsonSerializer.Deserialize<List<ArtistSocialLink>>(rawSocialLinks, SocialLinkJsonOptions);
+                if (parsedLinks is not null)
+                {
+                    links.AddRange(parsedLinks);
+                }
             }
+            catch (JsonException)
+            {
+                // Ignore malformed social-link JSON and keep any dedicated YouTube URL below.
+            }
+        }
 
-            return parsedLinks
-                .Where(link => !string.IsNullOrWhiteSpace(link.Url))
-                .Select(link => new SocialLinkListItem(
-                    SocialLinkResolver.NormalizePlatform(link.Platform, link.Url),
-                    link.Url!.Trim(),
-                    SocialLinkResolver.DetectProvider(link.Url)))
-                .Where(link => !string.IsNullOrWhiteSpace(link.Platform))
-                .Distinct()
-                .ToList();
-        }
-        catch (JsonException)
+        if (!string.IsNullOrWhiteSpace(youTubeUrl))
         {
-            return [];
+            links.Add(new ArtistSocialLink
+            {
+                Platform = "YouTube",
+                Url = youTubeUrl
+            });
         }
+
+        return links
+            .Select(link =>
+            {
+                if (string.IsNullOrWhiteSpace(link.Url))
+                {
+                    return null;
+                }
+
+                var provider = SocialLinkResolver.DetectProvider(link.Url);
+                var normalizedUrl = SocialLinkResolver.NormalizeUrlForDisplay(link.Url.Trim(), provider);
+
+                if (normalizedUrl is null)
+                {
+                    return null;
+                }
+
+                return new SocialLinkListItem(
+                    SocialLinkResolver.NormalizePlatform(link.Platform, normalizedUrl),
+                    normalizedUrl,
+                    provider);
+            })
+            .Where(link => link is not null)
+            .Cast<SocialLinkListItem>()
+            .Where(link => !string.IsNullOrWhiteSpace(link.Platform))
+            .Distinct()
+            .ToList();
     }
 
     private static string GetArtistCardClass(int index)

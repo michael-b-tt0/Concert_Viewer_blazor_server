@@ -9,6 +9,7 @@ public enum SocialLinkProvider
     Unknown,
     Spotify,
     SoundCloud,
+    YouTube,
     AppleMusic,
     Bandcamp,
     Deezer,
@@ -34,11 +35,23 @@ public static class SocialLinkResolver
         if (!string.IsNullOrWhiteSpace(cleanedPlatform) &&
             !string.Equals(cleanedPlatform, "social network", StringComparison.OrdinalIgnoreCase))
         {
+            if (cleanedPlatform.Contains("youtube", StringComparison.OrdinalIgnoreCase))
+            {
+                return "YouTube";
+            }
+
             return cleanedPlatform;
         }
 
         if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
         {
+            if (uri.Host.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) ||
+                uri.Host.Contains("music.youtube.com", StringComparison.OrdinalIgnoreCase) ||
+                uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+            {
+                return "YouTube";
+            }
+
             return uri.Host.Replace("www.", "", StringComparison.OrdinalIgnoreCase);
         }
 
@@ -62,6 +75,13 @@ public static class SocialLinkResolver
         if (host.Contains("soundcloud.com", StringComparison.OrdinalIgnoreCase))
         {
             return SocialLinkProvider.SoundCloud;
+        }
+
+        if (host.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) ||
+            host.Contains("music.youtube.com", StringComparison.OrdinalIgnoreCase) ||
+            host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+        {
+            return SocialLinkProvider.YouTube;
         }
 
         if (host.Contains("music.apple.com", StringComparison.OrdinalIgnoreCase))
@@ -142,6 +162,7 @@ public static class SocialLinkResolver
         {
             SocialLinkProvider.Spotify => TryCreateSpotifyEmbedUrl(link.Url),
             SocialLinkProvider.SoundCloud => TryCreateSoundCloudEmbedUrl(link.Url),
+            SocialLinkProvider.YouTube => TryCreateYouTubeEmbedUrl(link.Url),
             SocialLinkProvider.AppleMusic => TryCreateAppleMusicEmbedUrl(link.Url),
             SocialLinkProvider.Bandcamp => TryCreateBandcampEmbedUrl(link.Url),
             SocialLinkProvider.Deezer => TryCreateDeezerEmbedUrl(link.Url),
@@ -203,6 +224,190 @@ public static class SocialLinkResolver
 
         var encodedUrl = Uri.EscapeDataString(url);
         return $"https://w.soundcloud.com/player/?url={encodedUrl}&color=%230b6b43&auto_play=false&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=false";
+    }
+
+    private static string? TryCreateYouTubeEmbedUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            (!uri.Host.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) &&
+             !uri.Host.Contains("music.youtube.com", StringComparison.OrdinalIgnoreCase) &&
+             !uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase)))
+        {
+            return null;
+        }
+
+        var videoId = GetYouTubeVideoId(uri);
+        if (!string.IsNullOrWhiteSpace(videoId))
+        {
+            return $"https://www.youtube.com/embed/{videoId}";
+        }
+
+        var playlistId = GetYouTubePlaylistId(uri);
+        if (!string.IsNullOrWhiteSpace(playlistId))
+        {
+            return $"https://www.youtube.com/embed/videoseries?list={playlistId}";
+        }
+
+        return null;
+    }
+
+    public static string? NormalizeUrlForDisplay(string? url, SocialLinkProvider provider)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return null;
+        }
+
+        if (provider != SocialLinkProvider.YouTube)
+        {
+            return url.Trim();
+        }
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            (!uri.Host.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) &&
+             !uri.Host.Contains("music.youtube.com", StringComparison.OrdinalIgnoreCase) &&
+             !uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase)))
+        {
+            return null;
+        }
+
+        var videoId = GetYouTubeVideoId(uri);
+        if (!string.IsNullOrWhiteSpace(videoId))
+        {
+            return $"https://www.youtube.com/watch?v={videoId}";
+        }
+
+        var playlistId = GetYouTubePlaylistId(uri);
+        if (!string.IsNullOrWhiteSpace(playlistId))
+        {
+            return $"https://www.youtube.com/playlist?list={playlistId}";
+        }
+
+        if (HasInvalidYouTubeReference(uri))
+        {
+            return null;
+        }
+
+        var builder = new UriBuilder(uri)
+        {
+            Scheme = Uri.UriSchemeHttps,
+            Host = "www.youtube.com",
+            Port = -1
+        };
+
+        return builder.Uri.ToString();
+    }
+
+    private static bool HasInvalidYouTubeReference(Uri uri)
+    {
+        var videoId = GetQueryParameter(uri, "v");
+        if (videoId is not null &&
+            (string.IsNullOrWhiteSpace(videoId) || string.Equals(videoId, "none", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        var playlistId = GetQueryParameter(uri, "list");
+        if (playlistId is not null &&
+            (string.IsNullOrWhiteSpace(playlistId) || string.Equals(playlistId, "none", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        var segments = uri.AbsolutePath
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (segments.Length >= 2 && segments[0] is "embed" or "shorts")
+        {
+            return string.IsNullOrWhiteSpace(segments[1]) ||
+                   string.Equals(segments[1], "none", StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (segments.Length >= 1 && uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.IsNullOrWhiteSpace(segments[0]) ||
+                   string.Equals(segments[0], "none", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
+    }
+
+    private static string? GetYouTubeVideoId(Uri uri)
+    {
+        var videoId = GetQueryParameter(uri, "v");
+        if (!string.IsNullOrWhiteSpace(videoId) &&
+            !string.Equals(videoId, "none", StringComparison.OrdinalIgnoreCase))
+        {
+            return videoId;
+        }
+
+        var segments = uri.AbsolutePath
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (segments.Length >= 2 && segments[0] is "embed" or "shorts")
+        {
+            var candidateId = segments[1];
+            if (!string.IsNullOrWhiteSpace(candidateId) &&
+                !string.Equals(candidateId, "none", StringComparison.OrdinalIgnoreCase))
+            {
+                return candidateId;
+            }
+        }
+
+        if (segments.Length >= 1 && uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+        {
+            var candidateId = segments[0];
+            if (!string.IsNullOrWhiteSpace(candidateId) &&
+                !string.Equals(candidateId, "none", StringComparison.OrdinalIgnoreCase))
+            {
+                return candidateId;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? GetYouTubePlaylistId(Uri uri)
+    {
+        var playlistId = GetQueryParameter(uri, "list");
+        if (string.IsNullOrWhiteSpace(playlistId) ||
+            string.Equals(playlistId, "none", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return playlistId;
+    }
+
+    private static string? GetQueryParameter(Uri uri, string key)
+    {
+        var query = uri.Query;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return null;
+        }
+
+        var segments = query.TrimStart('?')
+            .Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        foreach (var segment in segments)
+        {
+            var parts = segment.Split('=', 2);
+            var name = WebUtility.UrlDecode(parts[0]);
+            if (!string.Equals(name, key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (parts.Length < 2)
+            {
+                return string.Empty;
+            }
+
+            return WebUtility.UrlDecode(parts[1]);
+        }
+
+        return null;
     }
 
     private static string? TryCreateBandcampEmbedUrl(string url)
