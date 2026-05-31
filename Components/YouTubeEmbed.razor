@@ -1,15 +1,26 @@
-<div class="embed-card">
-    <iframe src="@Embed.EmbedUrl"
-            title="@($"YouTube player for {ArtistName}")"
-            class="embed-frame youtube-frame"
-            width="400"
-            height="150"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            style="border-radius: 12px; box-shadow: 0px 4px 10px rgba(0,0,0,0.5);"
-            loading="lazy"
-            allowfullscreen></iframe>
-</div>
+@if (!string.IsNullOrWhiteSpace(VideoId))
+{
+    <div class="embed-card">
+        <div id="@PlayerElementId" class="youtube-player-host">
+            <button type="button"
+                    class="youtube-facade"
+                    style="background-image: url('@ThumbnailUrl');"
+                    aria-label="@($"Play YouTube video for {ArtistName}")"
+                    @onclick="LoadPlayerAsync">
+                <span class="youtube-play-button" aria-hidden="true"></span>
+                <span class="youtube-title">@ArtistName</span>
+            </button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="embed-card">
+        <a href="@Embed.Url" target="_blank" rel="noreferrer" class="embed-open-link">
+            Open @Embed.Platform
+        </a>
+    </div>
+}
 
 @code {
     [Parameter]
@@ -17,4 +28,47 @@
 
     [Parameter, EditorRequired]
     public SocialEmbedListItem Embed { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; } = default!;
+
+    private string PlayerElementId { get; } = $"youtube-player-{Guid.NewGuid():N}";
+
+    private string? VideoId => TryGetYouTubeVideoId(Embed.EmbedUrl);
+
+    private string? ThumbnailUrl => string.IsNullOrWhiteSpace(VideoId)
+        ? null
+        : $"https://i.ytimg.com/vi/{VideoId}/hqdefault.jpg";
+
+    private async Task LoadPlayerAsync()
+    {
+        if (string.IsNullOrWhiteSpace(VideoId))
+        {
+            return;
+        }
+
+        await JSRuntime.InvokeVoidAsync(
+            "concertViewerYouTube.loadPlayer",
+            PlayerElementId,
+            VideoId,
+            $"YouTube player for {ArtistName}");
+    }
+
+    private static string? TryGetYouTubeVideoId(string? embedUrl)
+    {
+        if (!Uri.TryCreate(embedUrl, UriKind.Absolute, out var uri) ||
+            !uri.Host.Contains("youtube.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var segments = uri.AbsolutePath
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        return segments.Length >= 2 &&
+               string.Equals(segments[0], "embed", StringComparison.OrdinalIgnoreCase) &&
+               !string.Equals(segments[1], "videoseries", StringComparison.OrdinalIgnoreCase)
+            ? segments[1]
+            : null;
+    }
 }

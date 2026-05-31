@@ -4,13 +4,86 @@
     max-width: 400px;
 }
 
-.embed-frame {
-    border: 0;
-}
-
-.youtube-frame {
+.youtube-player-host {
     width: 400px;
     height: 150px;
+    max-width: 100%;
+}
+
+.youtube-facade {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border: 0;
+    border-radius: 12px;
+    background-color: #111;
+    background-position: center;
+    background-size: cover;
+    box-shadow: 0 4px 10px rgb(0 0 0 / 50%);
+    cursor: pointer;
+    padding: 0;
+}
+
+.youtube-facade::before {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background: linear-gradient(90deg, rgb(0 0 0 / 62%), rgb(0 0 0 / 12%) 62%);
+}
+
+.youtube-facade:hover .youtube-play-button,
+.youtube-facade:focus-visible .youtube-play-button {
+    transform: translate(-50%, -50%) scale(1.08);
+    background: #f00;
+}
+
+.youtube-facade:focus-visible {
+    outline: 3px solid #0b6b43;
+    outline-offset: 3px;
+}
+
+.youtube-play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 58px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgb(33 33 33 / 92%);
+    transform: translate(-50%, -50%);
+    transition: background 120ms ease, transform 120ms ease;
+}
+
+.youtube-play-button::before {
+    position: absolute;
+    top: 50%;
+    left: 52%;
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-left: 16px solid #fff;
+    content: "";
+    transform: translate(-50%, -50%);
+}
+
+.youtube-title {
+    position: absolute;
+    right: 0.85rem;
+    bottom: 0.65rem;
+    left: 0.85rem;
+    z-index: 1;
+    overflow: hidden;
+    color: #fff;
+    font-size: 0.84rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: left;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 70%);
+    white-space: nowrap;
 }
 
 .embed-open-link {
@@ -22,4 +95,13 @@
 
 .embed-open-link:hover {
     text-decoration: underline;
+}
+
+iframe.youtube-frame {
+    width: 400px;
+    height: 150px;
+    max-width: 100%;
+    border: 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgb(0 0 0 / 50%);
 }
