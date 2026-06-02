@@ -8,6 +8,7 @@
     let nowPlayingTitle;
     let nowPlayingPauseButton;
     let nowPlayingJumpButton;
+    let activePlayerPaused = false;
 
     function loadApi() {
         if (window.YT && window.YT.Player) {
@@ -98,15 +99,17 @@
         return nowPlayingBar;
     }
 
-    function showNowPlayingBar(playerId) {
+    function showNowPlayingBar(playerId, isPaused) {
         const playerState = players.get(playerId);
         if (!playerState) {
             return;
         }
 
         activePlayerId = playerId;
+        activePlayerPaused = isPaused;
         createNowPlayingBar();
         nowPlayingTitle.textContent = playerState.title || "YouTube video";
+        nowPlayingPauseButton.textContent = activePlayerPaused ? "Resume" : "Pause";
         nowPlayingBar.hidden = false;
     }
 
@@ -116,6 +119,7 @@
         }
 
         activePlayerId = undefined;
+        activePlayerPaused = false;
 
         if (nowPlayingBar) {
             nowPlayingBar.hidden = true;
@@ -134,7 +138,11 @@
         }
 
         try {
-            playerState.player.pauseVideo();
+            if (activePlayerPaused) {
+                playerState.player.playVideo();
+            } else {
+                playerState.player.pauseVideo();
+            }
         } catch {
             hideNowPlayingBar();
         }
@@ -213,13 +221,14 @@
                     onStateChange(event) {
                         if (event.data === window.YT.PlayerState.PLAYING) {
                             pauseAllExcept(iframeId);
-                            showNowPlayingBar(iframeId);
+                            showNowPlayingBar(iframeId, false);
                         }
 
-                        if (
-                            event.data === window.YT.PlayerState.PAUSED ||
-                            event.data === window.YT.PlayerState.ENDED
-                        ) {
+                        if (event.data === window.YT.PlayerState.PAUSED) {
+                            showNowPlayingBar(iframeId, true);
+                        }
+
+                        if (event.data === window.YT.PlayerState.ENDED) {
                             hideNowPlayingBar(iframeId);
                         }
                     }
