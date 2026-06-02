@@ -1,6 +1,26 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
-@Body
+<AuthorizeView>
+    <Authorized Context="authState">
+        <div class="layout-shell">
+            <header class="layout-shell__header">
+                <div>
+                    <p class="layout-shell__eyebrow">Concert Viewer</p>
+                    <p class="layout-shell__welcome">Signed in as <strong>@authState.User.Identity?.Name</strong></p>
+                </div>
+
+                <LogoutButton />
+            </header>
+
+            <main class="layout-shell__body">
+                @Body
+            </main>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <LoginPanel />
+    </NotAuthorized>
+</AuthorizeView>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.

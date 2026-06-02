@@ -1,0 +1,92 @@
+@inject AuthenticationService AuthenticationService
+@inject NavigationManager NavigationManager
+
+@code {
+    private string ReturnUrl => BuildReturnUrl();
+    private bool ShowInvalidCredentialsMessage => GetQueryValue("authError") == "invalid";
+
+    private string BuildReturnUrl()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var path = string.IsNullOrWhiteSpace(uri.PathAndQuery) ? "/" : uri.PathAndQuery;
+
+        if (path.StartsWith("/?authError=", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/";
+        }
+
+        return path;
+    }
+
+    private string? GetQueryValue(string key)
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        if (string.IsNullOrWhiteSpace(uri.Query))
+        {
+            return null;
+        }
+
+        foreach (var pair in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = pair.Split('=', 2);
+            if (parts.Length == 0)
+            {
+                continue;
+            }
+
+            var currentKey = Uri.UnescapeDataString(parts[0]);
+            if (!string.Equals(currentKey, key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : string.Empty;
+        }
+
+        return null;
+    }
+}
+
+<section class="login-panel">
+    <div class="login-panel__card">
+        <p class="login-panel__eyebrow">Concert Viewer</p>
+        <h1 class="login-panel__title">Sign in to view the schedule</h1>
+        <p class="login-panel__copy">
+            This page is protected. Enter one of the configured usernames and passwords to continue.
+        </p>
+
+        @if (ShowInvalidCredentialsMessage)
+        {
+            <div class="login-panel__message login-panel__message--error">
+                The username or password was not recognized.
+            </div>
+        }
+
+        @if (!AuthenticationService.HasUsers)
+        {
+            <div class="login-panel__message">
+                No users are configured yet. Add entries under the <code>Authentication:Users</code> section in your app settings.
+            </div>
+        }
+        else
+        {
+            <form method="post" action="/auth/login" class="login-panel__form">
+                <AntiforgeryToken />
+                <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+
+                <label class="login-panel__field" for="username">
+                    <span>Username</span>
+                    <input id="username" name="username" autocomplete="username" required />
+                </label>
+
+                <label class="login-panel__field" for="password">
+                    <span>Password</span>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required />
+                </label>
+
+                <button type="submit" class="login-panel__submit">Sign in</button>
+            </form>
+        }
+    </div>
+</section>

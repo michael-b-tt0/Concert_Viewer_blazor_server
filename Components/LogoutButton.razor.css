@@ -1,0 +1,14 @@
+.logout-form {
+    margin: 0;
+}
+
+.logout-form__button {
+    padding: 0.7rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    background: rgba(65, 68, 66, 0.08);
+    color: #f7fbff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}

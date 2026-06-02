@@ -3,9 +3,12 @@ using Concert_Viewer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using Concert_Viewer.Services;
 using Microsoft.AspNetCore.DataProtection;
+using AppAuthenticationService = Concert_Viewer.Services.AuthenticationService;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,15 +36,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Strict;
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
-        options.LoginPath = "/login";
-        options.LogoutPath = "/logout";
-        options.AccessDeniedPath = "/login";
+        
     });
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<AuthenticationService>();
+builder.Services.AddScoped<AppAuthenticationService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
-builder.Services.AddAuthorizationCore();
+builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
 if (builder.Environment.IsProduction())
@@ -72,14 +73,42 @@ app.UseHttpsRedirection();
 
 
 
-// app.UseAntiforgery();
+
 
 app.MapStaticAssets();
 app.UseRouting();
+app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapPost("/auth/login", async (HttpContext httpContext, AppAuthenticationService authenticationService, [FromForm] string username, [FromForm] string password, [FromForm] string? returnUrl) =>
+{
+    var principal = authenticationService.CreatePrincipal(username, password);
+    if (principal is null)
+    {
+        var failedReturnUrl = authenticationService.NormalizeReturnUrl(returnUrl);
+        var separator = failedReturnUrl.Contains('?') ? "&" : "?";
+        return Results.LocalRedirect($"{failedReturnUrl}{separator}authError=invalid");
+    }
+
+    await httpContext.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        principal,
+        authenticationService.CreateAuthenticationProperties());
+
+    return Results.LocalRedirect(authenticationService.NormalizeReturnUrl(returnUrl));
+})
+.DisableAntiforgery();
+
+app.MapPost("/auth/logout", async (HttpContext httpContext, AppAuthenticationService authenticationService, [FromForm] string? returnUrl) =>
+{
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.LocalRedirect(authenticationService.NormalizeReturnUrl(returnUrl));
+})
+.DisableAntiforgery();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+    
 
 app.Run();

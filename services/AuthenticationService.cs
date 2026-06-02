@@ -1,85 +1,79 @@
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 
 namespace Concert_Viewer.Services
 {
     public class AuthenticationService
     {
-        private readonly IConfiguration _configuration;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<AuthenticationService> _logger;
         private readonly List<User> _users;
 
-        public AuthenticationService(IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
+        public AuthenticationService(IConfiguration configuration, ILogger<AuthenticationService> logger)
         {
-            _configuration = configuration;
-            _httpContextAccessor = httpContextAccessor;
-            
-            var authConfig = _configuration.GetSection("Authentication").Get<AuthenticationConfig>();
+            _logger = logger;
+
+            var authConfig = configuration.GetSection("Authentication").Get<AuthenticationConfig>();
             _users = authConfig?.Users ?? new List<User>();
         }
 
-        public async Task<bool> LoginAsync(string username, string password)
+        public bool HasUsers => _users.Count > 0;
+
+        public ClaimsPrincipal? CreatePrincipal(string? username, string? password)
         {
-            var user = _users.FirstOrDefault(u => 
-                u.Username.Equals(username, StringComparison.OrdinalIgnoreCase) && 
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            {
+                return null;
+            }
+
+            var user = _users.FirstOrDefault(u =>
+                u.Username.Equals(username, StringComparison.OrdinalIgnoreCase) &&
                 u.Password == password);
-                
-            if (user != null && _httpContextAccessor.HttpContext != null)
+
+            if (user is null)
             {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, username),
-                    new Claim("LoginTime", DateTime.UtcNow.ToString("O"))
-                };
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = true, // Creates a persistent cookie
-                    
-                    AllowRefresh = true
-                };
-
-                await _httpContextAccessor.HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                Console.WriteLine($"✅ User {username} logged in via cookie authentication");
-                return true;
+                _logger.LogWarning("Login failed for username {Username}", username);
+                return null;
             }
-            
-            Console.WriteLine($"❌ Login failed for username: {username}");
-            return false;
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim("LoginTime", DateTime.UtcNow.ToString("O"))
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+            _logger.LogInformation("Validated credentials for user {Username}", user.Username);
+            return new ClaimsPrincipal(claimsIdentity);
         }
 
-        public async Task LogoutAsync()
+        public AuthenticationProperties CreateAuthenticationProperties()
         {
-            if (_httpContextAccessor.HttpContext != null)
+            return new AuthenticationProperties
             {
-                var username = _httpContextAccessor.HttpContext.User.Identity?.Name;
-                
-                await _httpContextAccessor.HttpContext.SignOutAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme);
-                
-                Console.WriteLine($"✅ User {username} logged out");
-            }
+                IsPersistent = true,
+                AllowRefresh = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30)
+            };
         }
 
-        public string? GetCurrentUser()
+        public string NormalizeReturnUrl(string? returnUrl)
         {
-            var httpContext = _httpContextAccessor.HttpContext;
-            if (httpContext?.User?.Identity?.IsAuthenticated == true)
+            if (string.IsNullOrWhiteSpace(returnUrl))
             {
-                var username = httpContext.User.Identity.Name;
-                Console.WriteLine($"✅ Current user from cookie: {username}");
-                return username;
+                return "/";
             }
-            
-            Console.WriteLine("❌ No authenticated user found");
-            return null;
+
+            if (Uri.TryCreate(returnUrl, UriKind.Relative, out var relativeUrl) &&
+                returnUrl.StartsWith('/'))
+            {
+                return relativeUrl.ToString();
+            }
+
+            return "/";
         }
     }
 
@@ -98,19 +92,10 @@ namespace Concert_Viewer.Services
             
             if (httpContext?.User?.Identity?.IsAuthenticated == true)
             {
-                var username = httpContext.User.Identity.Name;
-                Console.WriteLine($"✅ User authenticated via cookie: {username}");
                 return Task.FromResult(new AuthenticationState(httpContext.User));
             }
 
-            Console.WriteLine("❌ No authenticated user - returning anonymous");
             return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
-        }
-
-        public void NotifyAuthenticationStateChanged()
-        {
-            Console.WriteLine("🔔 Notifying authentication state change");
-            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
     }
 
@@ -118,6 +103,7 @@ namespace Concert_Viewer.Services
     {
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
     }
 
     public class AuthenticationConfig
