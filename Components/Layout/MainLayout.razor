@@ -9,7 +9,11 @@
                     <p class="layout-shell__welcome">Signed in as <strong>@authState.User.Identity?.Name</strong></p>
                 </div>
 
-                <LogoutButton />
+                <div class="layout-shell__actions">
+                    <NavLink href="/" Match="NavLinkMatch.All" class="layout-shell__link">Concerts</NavLink>
+                    <NavLink href="/concert-scraper" class="layout-shell__link">Scraper</NavLink>
+                    <LogoutButton />
+                </div>
             </header>
 
             <main class="layout-shell__body">

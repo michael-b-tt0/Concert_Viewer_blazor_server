@@ -6,3 +6,5 @@
 /obj
 /schema.sql
 /backupdbs
+/docker-compose.yml
+/Dockerfile

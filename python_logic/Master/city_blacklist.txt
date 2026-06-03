@@ -1,0 +1,100 @@
+# One city per line.
+# Blank lines and lines starting with # are ignored.
+# Examples:
+# london
+# brighton
+Brighton
+Basingstoke
+Cambridge
+Wavendon
+Swindon
+Hove
+Windsor
+Maidstone
+Maidenhead
+Worthing
+Brighton and Hove
+Shoreham-by-Sea
+Milton Keynes
+Thame
+Tower of London
+Leighton Buzzard
+Newport Pagnell
+Arundel
+Chesham
+Milton Keynes Village
+Basildon
+Chelmsford
+Bedford
+Chatham
+Steyning
+Great Dunmow
+Lewes
+Uckfield
+Didcot
+Gillingham
+Leeds
+Hitchin
+Sevenoaks
+Edlesborough
+The City of Brighton and Hove
+brentwood
+St Albans
+Braintree
+Burgess Hill
+Nr Fletching
+Aldershot
+Edlesborough
+Stewartby
+Letchworth Garden City
+Fleet
+Luton
+Otford
+Steep
+Oldbrook
+Forest Row
+Maldon
+Worplesdon
+Faversham
+Shepreth
+Harefield
+Quainton
+Ditton
+Bishop's Stortford
+Henley-on-Thames
+Horsham
+Walton on the Hill
+Tunbridge Wells
+Bracknell
+Melbourn
+Battlesbridge
+Cuckfield
+High Wycombe
+Alfold
+Buntingford
+Wrecclesham
+Stevenage
+Aldermaston
+Kings Langley
+Witham
+Cranbrook
+Battle
+Hastings
+Rye
+Pulborough
+Berkhamsted
+Cranleigh
+Grantchester
+Horsmonden
+Horspath
+Oxted
+Herstmonceux
+Long Crendon
+Aylesbury
+Brightwell-cum-Sotwell
+Rochester
+Burnham
+Tenterden
+Portslade
+Sittingbourne
+Carshalton

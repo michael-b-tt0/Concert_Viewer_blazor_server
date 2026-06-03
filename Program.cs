@@ -42,6 +42,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AppAuthenticationService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<PythonRunnerService>();
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 

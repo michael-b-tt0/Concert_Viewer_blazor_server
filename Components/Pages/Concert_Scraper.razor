@@ -1,0 +1,221 @@
+@page "/concert-scraper"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject PythonRunnerService PythonRunner
+
+<PageTitle>Concert Scraper</PageTitle>
+
+<div class="scraper-shell">
+    <section class="scraper-header">
+        <div>
+            <p class="scraper-eyebrow">Pipeline runner</p>
+            <h1>Concert scraper</h1>
+        </div>
+
+        <div class="@GetStatusClass()">
+            <span class="status-dot"></span>
+            <span>@statusText</span>
+        </div>
+    </section>
+
+    <section class="scraper-controls" aria-label="Scraper controls">
+        <div class="date-fields">
+            <FluentDatePicker Label="From date"
+                              Width="170px"
+                              Disabled="@isRunning"
+                              @bind-Value="@fromDate" />
+
+            <FluentDatePicker Label="Until date"
+                              Width="170px"
+                              Disabled="@isRunning"
+                              @bind-Value="@untilDate" />
+        </div>
+
+        <div class="control-actions">
+            <FluentButton Appearance="Appearance.Accent"
+                          Disabled="@(!CanStart)"
+                          OnClick="@RunScraperAsync">
+                Run
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Neutral"
+                          Disabled="@(!isRunning)"
+                          OnClick="@StopScraperAsync">
+                Stop
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Neutral"
+                          Disabled="@isRunning"
+                          OnClick="@ClearTerminal">
+                Clear
+            </FluentButton>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(validationMessage))
+        {
+            <div class="scraper-message scraper-message--error">@validationMessage</div>
+        }
+    </section>
+
+    <section class="review-controls" aria-label="Interactive review controls">
+        <div>
+            <span class="review-label">Interactive review</span>
+            <span class="review-copy">Send a response when the terminal asks whether to merge records.</span>
+        </div>
+
+        <div class="review-actions">
+            <FluentButton Appearance="Appearance.Accent"
+                          Disabled="@(!isRunning)"
+                          OnClick="@SendYesAsync">
+                Yes
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Neutral"
+                          Disabled="@(!isRunning)"
+                          OnClick="@SendNoAsync">
+                No
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Neutral"
+                          Disabled="@(!isRunning)"
+                          OnClick="@SendQuitAsync">
+                Quit review
+            </FluentButton>
+        </div>
+    </section>
+
+    <section class="terminal-panel" aria-label="Python terminal output">
+        <div class="terminal-titlebar">
+            <span>Python output</span>
+            <span>@terminalChunks.Count chunks</span>
+        </div>
+
+        <pre class="terminal-output">@if (terminalChunks.Count == 0)
+            {
+                <span class="terminal-muted">No scraper output yet.</span>
+            }
+            else
+            {
+                @foreach (var chunk in terminalChunks)
+                {
+                    <span class="@GetTerminalChunkClass(chunk.Kind)">@chunk.Text</span>
+                }
+            }</pre>
+    </section>
+</div>
+
+@code {
+    private readonly List<PythonRunnerOutput> terminalChunks = [];
+    private DateTime? fromDate = DateTime.Today;
+    private DateTime? untilDate = DateTime.Today;
+    private string statusText = "Idle";
+    private string? validationMessage;
+    private bool isRunning;
+
+    private bool CanStart => !isRunning && fromDate.HasValue;
+
+    protected override void OnInitialized()
+    {
+        isRunning = PythonRunner.IsRunning;
+        PythonRunner.OutputReceived += OnOutputReceived;
+        PythonRunner.ProcessExited += OnProcessExited;
+    }
+
+    private async Task RunScraperAsync()
+    {
+        validationMessage = null;
+
+        if (!fromDate.HasValue)
+        {
+            validationMessage = "Choose a start date before running the scraper.";
+            return;
+        }
+
+        var normalizedFromDate = DateOnly.FromDateTime(fromDate.Value);
+        var normalizedUntilDate = DateOnly.FromDateTime((untilDate ?? fromDate).Value);
+
+        if (normalizedUntilDate < normalizedFromDate)
+        {
+            validationMessage = "Until date must be the same as or later than from date.";
+            return;
+        }
+
+        terminalChunks.Clear();
+        isRunning = true;
+        statusText = $"Running {normalizedFromDate:yyyy-MM-dd} to {normalizedUntilDate:yyyy-MM-dd}";
+
+        try
+        {
+            await PythonRunner.StartScraperAsync(normalizedFromDate, normalizedUntilDate);
+        }
+        catch (Exception ex)
+        {
+            isRunning = false;
+            statusText = "Failed to start";
+            validationMessage = ex.Message;
+            terminalChunks.Add(PythonRunnerOutput.Error($"{ex.Message}{Environment.NewLine}"));
+        }
+    }
+
+    private async Task StopScraperAsync()
+    {
+        await PythonRunner.StopAsync();
+        isRunning = false;
+        statusText = "Stopping";
+    }
+
+    private async Task SendReviewResponseAsync(string response)
+    {
+        try
+        {
+            await PythonRunner.SendInputAsync(response);
+        }
+        catch (Exception ex)
+        {
+            terminalChunks.Add(PythonRunnerOutput.Error($"{Environment.NewLine}{ex.Message}{Environment.NewLine}"));
+        }
+    }
+
+    private Task SendYesAsync() => SendReviewResponseAsync("y");
+
+    private Task SendNoAsync() => SendReviewResponseAsync("n");
+
+    private Task SendQuitAsync() => SendReviewResponseAsync("q");
+
+    private void ClearTerminal()
+    {
+        terminalChunks.Clear();
+    }
+
+    private void OnOutputReceived(PythonRunnerOutput output)
+    {
+        _ = InvokeAsync(() =>
+        {
+            terminalChunks.Add(output);
+            StateHasChanged();
+        });
+    }
+
+    private void OnProcessExited(int? exitCode)
+    {
+        _ = InvokeAsync(() =>
+        {
+            isRunning = false;
+            statusText = exitCode is null ? "Stopped" : $"Exited with code {exitCode}";
+            StateHasChanged();
+        });
+    }
+
+    private string GetStatusClass() =>
+        isRunning ? "scraper-status scraper-status--running" : "scraper-status";
+
+    private static string GetTerminalChunkClass(PythonOutputKind kind) => kind switch
+    {
+        PythonOutputKind.StandardError => "terminal-chunk terminal-chunk--error",
+        PythonOutputKind.Input => "terminal-chunk terminal-chunk--input",
+        PythonOutputKind.System => "terminal-chunk terminal-chunk--system",
+        _ => "terminal-chunk"
+    };
+
+    public void Dispose()
+    {
+        PythonRunner.OutputReceived -= OnOutputReceived;
+        PythonRunner.ProcessExited -= OnProcessExited;
+    }
+}

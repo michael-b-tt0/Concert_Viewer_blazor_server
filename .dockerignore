@@ -1,0 +1,12 @@
+.git
+.github
+.vs
+bin
+obj
+backupdbs
+.mypy_cache
+data-protection-keys
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd

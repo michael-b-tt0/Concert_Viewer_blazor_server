@@ -1,0 +1,20 @@
+# One mapping per line.
+# Format: alias => canonical venue
+# Multiple aliases can share one canonical venue by separating aliases with |
+# Blank lines and lines starting with # are ignored.
+#
+# Examples:
+# Egg LDN | Egg London => Egg London
+# Electric Ballroom, Camden => Electric Ballroom
+
+Alessio's Pizza | The Lexington => The Lexington
+PizzaExpress Live - Holborn => PizzaExpress Live Holborn
+PizzaExpress Live - Soho => Pizza Express Jazz Club Soho
+Egg LDN | Egg London => Egg London
+George Tavern | The George Tavern => The George Tavern
+The Divine | The Divine, Dalston => The Divine, Dalston
+Blondies | Blondie's Bar => Blondie's Bar 
+St Matthias Church | St Matthias Church (Stoke Newington) => St Matthias Church
+Dr. Martens 39 Brewer St. | Dr. Martens - Brewer St => Dr. Martens - Brewer St
+Next Door Records Two | Next Door Records Two (record shop) => Next Door Records Two
+Oslo House | Oslo | Oslo Hackney => Oslo

@@ -27,6 +27,27 @@
     color: rgba(247, 251, 255, 0.86);
 }
 
+.layout-shell__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.layout-shell__link {
+    color: rgba(247, 251, 255, 0.82);
+    font-weight: 700;
+    text-decoration: none;
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.5rem;
+}
+
+.layout-shell__link:hover,
+.layout-shell__link.active {
+    color: #f7fbff;
+    background: rgba(143, 211, 255, 0.16);
+}
+
 .layout-shell__body {
     padding: 1.5rem;
 }

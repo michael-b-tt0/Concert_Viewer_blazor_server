@@ -1,0 +1,237 @@
+# One venue per line.
+# Blank lines and lines starting with # are ignored.
+# Examples:
+# Secret Location
+# Some Venue Name
+Big Belly Comedy - Southbank
+Boisdale of Canary Wharf
+Fleet Jazz Club, The Harlington
+OSO Arts Centre
+PizzaExpress Live - Soho
+Ronnie Scott's Jazz Club
+Ronnie Scott's
+The Jazz Cafe
+Upstairs @ Ronnie's
+Vortex Jazz Club
+Fleet Jazz Club, The Harlington
+Sofar Sounds
+Nightjar
+Pizza Express Jazz Club Soho
+Love Supreme Projects
+Cadogan Hall
+The Exchange
+Wigmore Hall
+Wheatsheaf
+Toulouse Lautrec
+The Blues Kitchen Camden
+The Blues Kitchen Shoreditch
+jumbi
+Emerald Theatre
+the freedom bar soho
+Green Note
+Netil360
+The Dalston Lounge
+Thwaites Fine Stringed Instruments and Bows
+The Wheatsheaf Pub & Restaurant Farnham
+Thirty3Hz
+T-Bird
+Sanderson London, a Morgans Originals Hotel
+Private Event
+Jamboree
+G Live
+ExCeL London
+Camberley Theatre
+Central Theatre
+President Hotel
+Trapeze Bar
+OmNom
+Ladbroke Hall
+Pizza Express Live Holborn
+Piano Bar Soho
+Sanderson London, a Morgans Originals Hotel
+St Mary Le Strand
+The Big Chill House
+Trades Hall
+Yvonne Arnaud Theatre
+Weir Hotel
+W London
+The Theatre at the Hippodrome Casino
+Harris Academy Falconwood
+Ninety One
+Oneforty
+One Ninety Four
+Boom boom club
+Freight Brixton
+Cliffs Pavilion
+The Horse & Groom
+Nyx Restaurant - Live Music & Shows
+Morocco Bound Bermondsey
+Mascara Bar
+London Palladium
+Soul Mama - Islington
+The Old Town Hall
+The Orange Room
+Brixton House
+The Cheesy Grape
+Cryer Arts
+Cryer Arts Centre
+Guildford United Reformed Church
+Hampstead Jazz Club
+Morocco Bound Wandsworth
+London Transport Museum
+Marsh House Community Centre
+Mystica Indian Restaurant
+Muse at RSA
+Sandy's 111
+Sunrooms2
+The RSA (Royal Society of Arts, Manufactures and Commerce)
+The RSA
+World Heart Beat Embassy Gardens
+Guildford URC Church
+Grow
+Christ Church, East Sheen
+Andaz London Liverpool Street
+Jolly Farmer
+Morocco Bound
+Ruby Zoe Hotel London By Ihg
+Bistrotheque
+Battersea Park
+194 Piccadilly
+Beaverwood Club
+St James The Great (Church of Sound)
+The Royal Automobile Club
+The Ned
+Palais
+Leicester Square Theatre
+Goldfinch Books
+Haus Lounge, Garden & Nightclub – By Cococure
+Robin Hood
+Rollernation
+Thames Boat Cruises At Temple Pier
+Watford Palace Theatre
+The Garibaldi
+The Mall Sessions by Redstart
+St Michael & All Angels Church, Barnes
+St James's Church, Piccadilly
+St John's Church, Waterloo
+St Mary-le-Bow Church
+St Mary's Church
+Tattershall Castle
+Soma hŌṃe (N16)
+PizzaExpress Live - Holborn
+O'Neill's Sutton
+Mezcalito Chelsea
+GAIL's Bakery - Hampstead
+Emmanuel Community Church International - Walthamstow
+Central Hall Westminster
+Bexley-Sidcup Conservative Club
+Ain't Nothin But The Blues Bar
+Boisdale of Belgravia
+Finsbury Park Picturehouse
+Goldfinch Books
+Hackney Empire
+Guildford City Club
+King's Head Theatre Pub
+Irish Cultural Centre
+The Yaa Centre
+Vortex
+Royal British Legion Petts Wood
+CÉ LA VI London
+Crypt, St Giles Church Camberwell
+Hampton Hub Club
+Hythe Quay Maldon
+Hux Hotel
+Kings Place
+Kings Place (Hall One)
+Oliver's Jazz Bar
+Soul Mama
+lightbox
+lightbox london
+Birdies Coffee House & Bar & Farnham Park Golf Course
+Cabbage Patch Pub
+Kings Place (Hall Two)
+Windsor wine & dine
+UNDR
+The Wandle of Earlsfield
+Morocco Bound Bookshop
+House of Sisters Grimm
+PizzaExpress
+The Cut Arts Centre
+The Eric Morecambe Centre
+The Blues Kitchen Brixton
+The Grand Taj
+West End Arts Library
+South Street Arts Centre
+St Luke's Church, Hampstead
+St Margaret's Church, Rainham
+Carpet Shop
+601pm
+Clock Tower, St. Pancras Station
+Uxbridge Folk Club
+Soho Folk and Blues @cuts
+Cockpit Deptford
+Epsom Playhouse
+St. Mary Magdalene's Church, Wandsworth Common
+O'Neill's Kingston upon Thames
+Omved Gardens
+Comedy Carnival Covent Garden
+MUSE at RSA House
+The Rock Church - Walthamstow
+Shoreditch Town Hall
+Soul Mama Angel
+Soul Mama - Stratford
+Thirteen at Chateau Denmark
+Soul Mama Stratford
+Soul Mama - Angel
+The Drawing Room at Brown's Hotel
+Woking Theatre
+Mr Fogg's Tavern
+Marchesi
+Pizza Express
+Islington Folk Club
+St James the Great Church
+Camden Comedy Club
+Brasserie Zedel - Crazy Coqs
+Brasserie Zedel
+Brouhaha
+Sofar Sounds - Town Centre
+Sofar Sounds
+Art's Music Lounge
+Big Belly Bar & Comedy Club London
+Creekside Discovery Centre
+HM Chapel Royal, Hampton Court Palace
+Opera Holland Park Theatre
+Churchill Theatre
+Eadn St Paul’s
+Lambeth Town Hall
+Oaklands College
+The Etcetera Theatre
+Theatreship
+Undisclosed Majority Ltd
+Harrow Arts Centre
+Piano Smithfield
+Phoenix Theatre
+Wembley Stadium
+St. Paul's Cathedral
+St Paul's, Covent Garden (The Actors' Church)
+The Rising Sun Arts Centre
+The Sanctuary and Soul
+The Cuff London
+Opera Holland Park
+Jazzlive at The Crypt
+Ain't Nothin But
+North Heath Social Club Ltd
+Windsor Castle
+The Bulls Head Barnes
+St Mary's Church, Battersea
+St Mary Le Strand Church
+St Augustine
+Southwark Cathedral
+Praise Gate Temple
+Morocco Bound Bookshop Wandsworth
+Lime Cross Nursery Conifers (By appointment only)
+Club Silly
+Calthorpe Community Garden
+Esher Theatre
+Hoxton Hall
+Torriano Meeting house
