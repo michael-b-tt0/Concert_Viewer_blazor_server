@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @implements IDisposable
 @inject PythonRunnerService PythonRunner
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Concert Scraper</PageTitle>
 
@@ -86,7 +87,7 @@
             <span>@terminalChunks.Count chunks</span>
         </div>
 
-        <pre class="terminal-output">@if (terminalChunks.Count == 0)
+        <pre class="terminal-output" @ref="terminalOutput">@if (terminalChunks.Count == 0)
             {
                 <span class="terminal-muted">No scraper output yet.</span>
             }
@@ -107,6 +108,8 @@
     private string statusText = "Idle";
     private string? validationMessage;
     private bool isRunning;
+    private bool shouldAutoScroll;
+    private ElementReference terminalOutput;
 
     private bool CanStart => !isRunning && fromDate.HasValue;
 
@@ -188,6 +191,7 @@
         _ = InvokeAsync(() =>
         {
             terminalChunks.Add(output);
+            shouldAutoScroll = true;
             StateHasChanged();
         });
     }
@@ -212,6 +216,17 @@
         PythonOutputKind.System => "terminal-chunk terminal-chunk--system",
         _ => "terminal-chunk"
     };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!shouldAutoScroll)
+        {
+            return;
+        }
+
+        shouldAutoScroll = false;
+        await JSRuntime.InvokeVoidAsync("concertViewerTerminal.scrollToBottom", terminalOutput);
+    }
 
     public void Dispose()
     {

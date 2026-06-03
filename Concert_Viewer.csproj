@@ -5,12 +5,21 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <DefaultItemExcludes>$(DefaultItemExcludes);publish-test\**;publish\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.DataGrid.ODataAdapter" Version="4.14.2" />
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="4.14.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="python_logic\**\*"
+             Exclude="python_logic\**\__pycache__\**;python_logic\**\*.pyc;python_logic\**\output\**;python_logic\**\.mypy_cache\**;python_logic\**\.git\**;python_logic\**\.venv\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

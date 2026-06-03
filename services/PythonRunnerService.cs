@@ -50,15 +50,11 @@ public sealed class PythonRunnerService : IAsyncDisposable
             _processCancellation?.Dispose();
             _processCancellation = new CancellationTokenSource();
 
-            var masterDirectory = Path.Combine(_environment.ContentRootPath, "python_logic", "Master");
-            var scriptPath = Path.Combine(masterDirectory, "run_all_scrapers.py");
+            var scriptPath = ResolveScriptPath();
+            var masterDirectory = Path.GetDirectoryName(scriptPath)
+                ?? throw new InvalidOperationException("The scraper working directory could not be resolved.");
             var databasePath = Path.Combine(_environment.ContentRootPath, "concerts.db");
             var appSettingsPath = Path.Combine(_environment.ContentRootPath, "appsettings.json");
-
-            if (!File.Exists(scriptPath))
-            {
-                throw new FileNotFoundException("The scraper entrypoint could not be found.", scriptPath);
-            }
 
             var process = new Process
             {
@@ -164,6 +160,8 @@ public sealed class PythonRunnerService : IAsyncDisposable
         startInfo.ArgumentList.Add(fromDate.ToString("yyyy-MM-dd"));
         startInfo.ArgumentList.Add("--until-date");
         startInfo.ArgumentList.Add(untilDate.ToString("yyyy-MM-dd"));
+        startInfo.ArgumentList.Add("--dice-category");
+        startInfo.ArgumentList.Add("gigs");
 
         var scrapingAntApiKey = _configuration["PythonSettings:ScrapingAnt:ApiKey"];
         if (!string.IsNullOrWhiteSpace(scrapingAntApiKey))
@@ -179,6 +177,52 @@ public sealed class PythonRunnerService : IAsyncDisposable
         startInfo.ArgumentList.Add("--verbose");
 
         return startInfo;
+    }
+
+    private string ResolveScriptPath()
+    {
+        var candidateRoots = new[]
+        {
+            _environment.ContentRootPath,
+            AppContext.BaseDirectory,
+            Directory.GetCurrentDirectory()
+        };
+
+        foreach (var root in candidateRoots.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(root))
+            {
+                continue;
+            }
+
+            var directCandidate = Path.Combine(root, "python_logic", "Master", "run_all_scrapers.py");
+            if (File.Exists(directCandidate))
+            {
+                return directCandidate;
+            }
+
+            var current = new DirectoryInfo(root);
+            while (current is not null)
+            {
+                var upwardCandidate = Path.Combine(current.FullName, "python_logic", "Master", "run_all_scrapers.py");
+                if (File.Exists(upwardCandidate))
+                {
+                    return upwardCandidate;
+                }
+
+                current = current.Parent;
+            }
+        }
+
+        var attemptedLocations = string.Join(
+            Environment.NewLine,
+            candidateRoots
+                .Where(static path => !string.IsNullOrWhiteSpace(path))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(path => $"- {Path.Combine(path, "python_logic", "Master", "run_all_scrapers.py")}"));
+
+        throw new FileNotFoundException(
+            $"The scraper entrypoint could not be found. Checked:{Environment.NewLine}{attemptedLocations}");
     }
 
     private async Task MonitorProcessAsync(Process process, CancellationToken cancellationToken)
