@@ -4,6 +4,7 @@
 @using System.Text.Json
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ConcertsContext> DbContextFactory
+@inject IJSRuntime JS
 
 <PageTitle>Concert Viewer</PageTitle>
 
@@ -137,6 +138,13 @@
                     </ul>
                 }
             </TemplateColumn>
+            <TemplateColumn Title="Actions" Align="Align.End">
+                <FluentButton Appearance="Appearance.Stealth"
+                              Disabled="@isDeletingEvent"
+                              @onclick="() => DeleteEventAsync(context)">
+                    Delete
+                </FluentButton>
+            </TemplateColumn>
         </FluentDataGrid>
     }
 </div>
@@ -153,6 +161,7 @@
     private string? selectedDate;
     private bool isLoadingDates = true;
     private bool isLoadingEvents;
+    private bool isDeletingEvent;
 
     protected override async Task OnInitializedAsync()
     {
@@ -250,6 +259,63 @@
         finally
         {
             isLoadingEvents = false;
+        }
+    }
+
+    private async Task DeleteEventAsync(EventListItem item)
+    {
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"Delete '{item.EventTitle}' on {FormatDateLabel(selectedDate)}?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        isDeletingEvent = true;
+        loadError = null;
+
+        try
+        {
+            await using var db = await DbContextFactory.CreateDbContextAsync();
+
+            var eventToDelete = await db.CanonicalEvents
+                .FirstOrDefaultAsync(e => e.Id == item.Id);
+
+            if (eventToDelete is null)
+            {
+                loadError = "That event was already removed.";
+                events = events.Where(e => e.Id != item.Id).ToList();
+                return;
+            }
+
+            db.CanonicalEvents.Remove(eventToDelete);
+            await db.SaveChangesAsync();
+
+            events = events.Where(e => e.Id != item.Id).ToList();
+
+            if (events.Count == 0 && !string.IsNullOrWhiteSpace(selectedDate))
+            {
+                availableDates = availableDates
+                    .Where(date => date.Value != selectedDate)
+                    .ToList();
+
+                selectedDate = availableDates.FirstOrDefault()?.Value;
+
+                if (!string.IsNullOrWhiteSpace(selectedDate))
+                {
+                    await LoadEventsAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Unable to delete {item.EventTitle}: {ex.Message}";
+        }
+        finally
+        {
+            isDeletingEvent = false;
         }
     }
 

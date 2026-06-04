@@ -44,7 +44,8 @@ public sealed class ConcertsContext(DbContextOptions<ConcertsContext> options) :
 
             entity.HasMany(e => e.EventArtists)
                 .WithOne(ea => ea.CanonicalEvent)
-                .HasForeignKey(ea => ea.CanonicalEventId);
+                .HasForeignKey(ea => ea.CanonicalEventId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Artist>(entity =>
@@ -71,7 +72,8 @@ public sealed class ConcertsContext(DbContextOptions<ConcertsContext> options) :
 
             entity.HasMany(e => e.EventArtists)
                 .WithOne(ea => ea.Artist)
-                .HasForeignKey(ea => ea.ArtistId);
+                .HasForeignKey(ea => ea.ArtistId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<EventArtist>(entity =>
