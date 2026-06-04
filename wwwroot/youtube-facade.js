@@ -200,6 +200,7 @@
             iframe.className = "youtube-frame";
             iframe.loading = "lazy";
             iframe.frameBorder = "0";
+            iframe.referrerPolicy = "strict-origin-when-cross-origin";
 
             iframe.setAttribute(
                 "allow",
