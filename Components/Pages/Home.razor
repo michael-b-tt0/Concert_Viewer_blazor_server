@@ -1,10 +1,10 @@
 @page "/"
 @rendermode InteractiveServer
 @using Concert_Viewer.Data
+@using System.Net
 @using System.Text.Json
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ConcertsContext> DbContextFactory
-@inject IJSRuntime JS
 
 <PageTitle>Concert Viewer</PageTitle>
 
@@ -141,7 +141,8 @@
             <TemplateColumn Title="Actions" Align="Align.End">
                 <FluentButton Appearance="Appearance.Stealth"
                               Disabled="@isDeletingEvent"
-                              @onclick="() => DeleteEventAsync(context)">
+                              Title="Double-click to delete"
+                              @ondblclick="() => DeleteEventAsync(context)">
                     Delete
                 </FluentButton>
             </TemplateColumn>
@@ -246,7 +247,7 @@
                     Venue = string.IsNullOrWhiteSpace(e.Venue) ? "Venue TBA" : e.Venue,
                     City = string.IsNullOrWhiteSpace(e.City) ? "City TBA" : e.City,
                     Description = e.Description,
-                    EventLinks = FormatEventLinks(e),
+                    EventLinks = FormatEventLinks(e, selectedDate),
                     ImageUrl = e.ImageUrl,
                     Artists = FormatArtists(e)
                 })
@@ -264,15 +265,6 @@
 
     private async Task DeleteEventAsync(EventListItem item)
     {
-        var confirmed = await JS.InvokeAsync<bool>(
-            "confirm",
-            $"Delete '{item.EventTitle}' on {FormatDateLabel(selectedDate)}?");
-
-        if (!confirmed)
-        {
-            return;
-        }
-
         isDeletingEvent = true;
         loadError = null;
 
@@ -340,13 +332,14 @@
         return artists;
     }
 
-    private static List<EventLinkListItem> FormatEventLinks(Data.Entities.CanonicalEvent concertEvent)
+    private static List<EventLinkListItem> FormatEventLinks(Data.Entities.CanonicalEvent concertEvent, string? selectedDate)
     {
         var links = new List<EventLinkListItem>();
 
         AddEventLink(links, "Dice", concertEvent.DiceUrl);
         AddEventLink(links, "Songkick", concertEvent.SongkickUrl);
         AddEventLink(links, "Bandsintown", concertEvent.BandsintownUrl);
+        AddGoogleAiSummaryLink(links, concertEvent, selectedDate);
 
         return links;
     }
@@ -357,6 +350,33 @@
         {
             links.Add(new EventLinkListItem(label, url.Trim()));
         }
+    }
+
+    private static void AddGoogleAiSummaryLink(
+        List<EventLinkListItem> links,
+        Data.Entities.CanonicalEvent concertEvent,
+        string? selectedDate)
+    {
+        var keywords = new[]
+            {
+                concertEvent.EventTitle,
+                concertEvent.Venue,
+                concertEvent.City,
+                selectedDate
+            }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!.Trim());
+
+        var searchText = string.Join(" ", keywords);
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            return;
+        }
+
+        var encodedKeywords = WebUtility.UrlEncode(searchText);
+        var googleAiUrl = $"https://www.google.com/search?q={encodedKeywords}&udm=50&gl=gb";
+
+        links.Add(new EventLinkListItem("Google AI summary", googleAiUrl));
     }
 
     private static ArtistListItem? FormatArtistDisplay(Data.Entities.EventArtist eventArtist)
