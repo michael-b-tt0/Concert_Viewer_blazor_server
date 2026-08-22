@@ -1,6 +1,6 @@
 .layout-shell {
-    min-height: 100vh;
-    
+    min-height: 100dvh;
+    background: linear-gradient(168deg, #0b1219 0%, #111d28 40%, #0f1922 100%);
 }
 
 .layout-shell__header {
@@ -8,54 +8,84 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    color: #f7fbff;
+    padding: 1.15rem 1.75rem;
+    border-bottom: 1px solid var(--cv-border);
+    background: rgba(11, 18, 25, 0.65);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    color: var(--cv-text);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .layout-shell__eyebrow {
     margin: 0;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: #8fd3ff;
+    color: var(--cv-accent);
+    background: linear-gradient(135deg, var(--cv-accent), var(--cv-accent-warm));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .layout-shell__welcome {
     margin: 0.3rem 0 0;
-    color: rgba(247, 251, 255, 0.86);
+    font-size: 0.88rem;
+    color: var(--cv-text-muted);
+}
+
+.layout-shell__welcome strong {
+    color: var(--cv-text);
 }
 
 .layout-shell__actions {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.35rem;
     flex-wrap: wrap;
 }
 
 .layout-shell__link {
-    color: rgba(247, 251, 255, 0.82);
+    color: var(--cv-text-muted);
     font-weight: 700;
+    font-size: 0.88rem;
     text-decoration: none;
-    padding: 0.55rem 0.7rem;
-    border-radius: 0.5rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: var(--cv-radius);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
 }
 
-.layout-shell__link:hover,
+.layout-shell__link:hover {
+    color: var(--cv-text);
+    background: rgba(94, 196, 255, 0.06);
+    border-color: var(--cv-border);
+}
+
 .layout-shell__link.active {
-    color: #f7fbff;
-    background: rgba(143, 211, 255, 0.16);
+    color: var(--cv-accent);
+    background: rgba(94, 196, 255, 0.1);
+    border-color: rgba(94, 196, 255, 0.18);
+    box-shadow: 0 0 16px rgba(94, 196, 255, 0.06);
 }
 
 .layout-shell__body {
-    padding: 1.5rem;
+    padding: 0;
 }
 
 @media (max-width: 640px) {
     .layout-shell__header {
         flex-direction: column;
         align-items: flex-start;
+        padding: 1rem 1.25rem;
+    }
+
+    .layout-shell__actions {
+        width: 100%;
     }
 }
 

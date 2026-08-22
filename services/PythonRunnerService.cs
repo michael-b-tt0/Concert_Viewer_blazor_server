@@ -5,6 +5,8 @@ namespace Concert_Viewer.Services;
 
 public sealed class PythonRunnerService : IAsyncDisposable
 {
+    private static readonly string[] DefaultDiceCategories = ["popular", "gigs"];
+
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PythonRunnerService> _logger;
@@ -37,7 +39,11 @@ public sealed class PythonRunnerService : IAsyncDisposable
         }
     }
 
-    public Task StartScraperAsync(DateOnly fromDate, DateOnly untilDate, string city = "london")
+    public Task StartScraperAsync(
+        DateOnly fromDate,
+        DateOnly untilDate,
+        string city = "london",
+        string? diceCategory = null)
     {
         lock (_syncRoot)
         {
@@ -58,7 +64,15 @@ public sealed class PythonRunnerService : IAsyncDisposable
 
             var process = new Process
             {
-                StartInfo = BuildStartInfo(masterDirectory, scriptPath, databasePath, appSettingsPath, fromDate, untilDate, city),
+                StartInfo = BuildStartInfo(
+                    masterDirectory,
+                    scriptPath,
+                    databasePath,
+                    appSettingsPath,
+                    fromDate,
+                    untilDate,
+                    city,
+                    diceCategory),
                 EnableRaisingEvents = true
             };
 
@@ -131,7 +145,8 @@ public sealed class PythonRunnerService : IAsyncDisposable
         string appSettingsPath,
         DateOnly fromDate,
         DateOnly untilDate,
-        string city)
+        string city,
+        string? diceCategory)
     {
         var pythonExecutable = _configuration["PythonRunner:Executable"];
         if (string.IsNullOrWhiteSpace(pythonExecutable))
@@ -160,8 +175,18 @@ public sealed class PythonRunnerService : IAsyncDisposable
         startInfo.ArgumentList.Add(fromDate.ToString("yyyy-MM-dd"));
         startInfo.ArgumentList.Add("--until-date");
         startInfo.ArgumentList.Add(untilDate.ToString("yyyy-MM-dd"));
-        startInfo.ArgumentList.Add("--dice-category");
-        startInfo.ArgumentList.Add("gigs");
+
+        if (!string.IsNullOrWhiteSpace(diceCategory))
+        {
+            startInfo.ArgumentList.Add("--dice-categories");
+
+            foreach (var category in DefaultDiceCategories
+                .Append(diceCategory)
+                .Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                startInfo.ArgumentList.Add(category);
+            }
+        }
 
         var scrapingAntApiKey = _configuration["PythonSettings:ScrapingAnt:ApiKey"];
         if (!string.IsNullOrWhiteSpace(scrapingAntApiKey))

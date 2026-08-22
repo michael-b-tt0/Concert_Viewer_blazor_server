@@ -30,6 +30,22 @@
                               Width="170px"
                               Disabled="@isRunning"
                               @bind-Value="@untilDate" />
+
+            <div class="field-group">
+                <span class="field-label">DICE category</span>
+                <FluentSelect TOption="DiceCategoryOption"
+                              TValue="string"
+                              Id="dice-category"
+                              Class="dice-category-select"
+                              AriaLabel="DICE category"
+                              Items="@diceCategoryOptions"
+                              OptionText="@(item => item.Label)"
+                              OptionValue="@(item => item.Value)"
+                              Value="@selectedDiceCategory"
+                              ValueChanged="OnDiceCategoryChanged"
+                              Disabled="@isRunning" />
+                <span class="field-hint">Selected category runs in addition to the default DICE set: popular + gigs.</span>
+            </div>
         </div>
 
         <div class="control-actions">
@@ -103,8 +119,16 @@
 
 @code {
     private readonly List<PythonRunnerOutput> terminalChunks = [];
+    private readonly List<DiceCategoryOption> diceCategoryOptions =
+    [
+        new(string.Empty, "Default categories"),
+        new("dj", "Add DJ"),
+        new("party", "Add Party"),
+        
+    ];
     private DateTime? fromDate = DateTime.Today;
     private DateTime? untilDate = DateTime.Today;
+    private string selectedDiceCategory = string.Empty;
     private string statusText = "Idle";
     private string? validationMessage;
     private bool isRunning;
@@ -145,7 +169,10 @@
 
         try
         {
-            await PythonRunner.StartScraperAsync(normalizedFromDate, normalizedUntilDate);
+            await PythonRunner.StartScraperAsync(
+                normalizedFromDate,
+                normalizedUntilDate,
+                diceCategory: string.IsNullOrWhiteSpace(selectedDiceCategory) ? null : selectedDiceCategory);
         }
         catch (Exception ex)
         {
@@ -180,6 +207,12 @@
     private Task SendNoAsync() => SendReviewResponseAsync("n");
 
     private Task SendQuitAsync() => SendReviewResponseAsync("q");
+
+    private Task OnDiceCategoryChanged(string? value)
+    {
+        selectedDiceCategory = value ?? string.Empty;
+        return Task.CompletedTask;
+    }
 
     private void ClearTerminal()
     {
@@ -233,4 +266,6 @@
         PythonRunner.OutputReceived -= OnOutputReceived;
         PythonRunner.ProcessExited -= OnProcessExited;
     }
+
+    private sealed record DiceCategoryOption(string Value, string Label);
 }

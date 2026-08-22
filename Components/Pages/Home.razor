@@ -18,22 +18,20 @@
     </section>
 
     <section class="toolbar">
-        <label class="field" for="event-date">
+        <div class="field">
             <span class="field-label">Event date</span>
-            <select id="event-date" class="date-select" value="@selectedDate" @onchange="OnDateChanged" disabled="@isLoadingDates">
-                @if (availableDates.Count == 0)
-                {
-                    <option value="">No dates found</option>
-                }
-                else
-                {
-                    @foreach (var date in availableDates)
-                    {
-                        <option value="@date.Value">@date.Label</option>
-                    }
-                }
-            </select>
-        </label>
+            <FluentSelect TOption="DateOption"
+                          TValue="string"
+                          Id="event-date"
+                          Class="date-select"
+                          AriaLabel="Event date"
+                          Items="@availableDates"
+                          OptionText="@(item => item.Label)"
+                          OptionValue="@(item => item.Value)"
+                          Value="@selectedDate"
+                          ValueChanged="OnDateChanged"
+                          Disabled="@(isLoadingDates || availableDates.Count == 0)" />
+        </div>
 
         <div class="summary-card">
             <span class="summary-label">Events shown</span>
@@ -207,9 +205,9 @@
         }
     }
 
-    private async Task OnDateChanged(ChangeEventArgs args)
+    private async Task OnDateChanged(string? value)
     {
-        selectedDate = args.Value?.ToString();
+        selectedDate = value;
         await LoadEventsAsync();
     }
 

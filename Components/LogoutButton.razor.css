@@ -3,12 +3,20 @@
 }
 
 .logout-form__button {
-    padding: 0.7rem 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 999px;
-    background: rgba(65, 68, 66, 0.08);
-    color: #f7fbff;
+    padding: 0.5rem 0.85rem;
+    border: 1px solid var(--cv-border-strong);
+    border-radius: var(--cv-radius);
+    background: rgba(239, 68, 68, 0.06);
+    color: var(--cv-text-muted);
     font: inherit;
+    font-size: 0.88rem;
     font-weight: 700;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.logout-form__button:hover {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.25);
 }
