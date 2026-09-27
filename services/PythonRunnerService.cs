@@ -5,8 +5,6 @@ namespace Concert_Viewer.Services;
 
 public sealed class PythonRunnerService : IAsyncDisposable
 {
-    private static readonly string[] DefaultDiceCategories = ["popular", "gigs"];
-
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PythonRunnerService> _logger;
@@ -42,9 +40,14 @@ public sealed class PythonRunnerService : IAsyncDisposable
     public Task StartScraperAsync(
         DateOnly fromDate,
         DateOnly untilDate,
-        string city = "london",
-        string? diceCategory = null)
+        string bitAuth,
+        string city = "london")
     {
+        if (string.IsNullOrWhiteSpace(bitAuth))
+        {
+            throw new ArgumentException("A Bandsintown bit_auth cookie is required.", nameof(bitAuth));
+        }
+
         lock (_syncRoot)
         {
             if (_process is { HasExited: false })
@@ -72,7 +75,7 @@ public sealed class PythonRunnerService : IAsyncDisposable
                     fromDate,
                     untilDate,
                     city,
-                    diceCategory),
+                    bitAuth),
                 EnableRaisingEvents = true
             };
 
@@ -146,7 +149,7 @@ public sealed class PythonRunnerService : IAsyncDisposable
         DateOnly fromDate,
         DateOnly untilDate,
         string city,
-        string? diceCategory)
+        string bitAuth)
     {
         var pythonExecutable = _configuration["PythonRunner:Executable"];
         if (string.IsNullOrWhiteSpace(pythonExecutable))
@@ -176,17 +179,8 @@ public sealed class PythonRunnerService : IAsyncDisposable
         startInfo.ArgumentList.Add("--until-date");
         startInfo.ArgumentList.Add(untilDate.ToString("yyyy-MM-dd"));
 
-        if (!string.IsNullOrWhiteSpace(diceCategory))
-        {
-            startInfo.ArgumentList.Add("--dice-categories");
-
-            foreach (var category in DefaultDiceCategories
-                .Append(diceCategory)
-                .Distinct(StringComparer.OrdinalIgnoreCase))
-            {
-                startInfo.ArgumentList.Add(category);
-            }
-        }
+        startInfo.ArgumentList.Add("--bit-auth");
+        startInfo.ArgumentList.Add(bitAuth);
 
         var scrapingAntApiKey = _configuration["PythonSettings:ScrapingAnt:ApiKey"];
         if (!string.IsNullOrWhiteSpace(scrapingAntApiKey))

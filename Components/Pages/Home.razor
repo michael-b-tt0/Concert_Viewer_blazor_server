@@ -61,7 +61,7 @@
                         Items="@events.AsQueryable()"
                         DisplayMode="DataGridDisplayMode.Table"
                         MultiLine="true"
-                        GenerateHeader="GenerateHeaderOption.Sticky"
+                        GenerateHeader="DataGridGeneratedHeaderType.Sticky"
                         ResizableColumns="true"
                         RowSize="DataGridRowSize.Medium"
                         Class="events-grid">
@@ -136,8 +136,8 @@
                     </ul>
                 }
             </TemplateColumn>
-            <TemplateColumn Title="Actions" Align="Align.End">
-                <FluentButton Appearance="Appearance.Stealth"
+            <TemplateColumn Title="Actions" Align="DataGridCellAlignment.End">
+                <FluentButton Appearance="ButtonAppearance.Default"
                               Disabled="@isDeletingEvent"
                               Title="Double-click to delete"
                               @ondblclick="() => DeleteEventAsync(context)">

@@ -120,8 +120,20 @@
     color: var(--cv-text-faint);
 }
 
-.dice-category-select {
-    min-width: 170px;
+.bit-auth-input {
+    min-width: 250px;
+    min-height: 2.25rem;
+    padding: 0.4rem 0.65rem;
+    border: 1px solid var(--cv-border-strong);
+    border-radius: var(--cv-radius);
+    background: var(--cv-bg-card-solid);
+    color: var(--cv-text);
+    font: inherit;
+}
+
+.bit-auth-input:focus-visible {
+    outline: 2px solid var(--cv-accent);
+    outline-offset: 2px;
 }
 
 /* ── Messages ─────────────────────────────────────────────────────── */
