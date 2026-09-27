@@ -1,0 +1,12 @@
+[submodule "python_logic/bandsintown-scraper"]
+	path = python_logic/bandsintown-scraper
+	url = https://github.com/michael-b-tt0/bandsintown-scraper.git
+[submodule "python_logic/dice-scraper"]
+	path = python_logic/dice-scraper
+	url = https://github.com/michael-b-tt0/dice-scraper.git
+[submodule "python_logic/songkick-scraper"]
+	path = python_logic/songkick-scraper
+	url = https://github.com/michael-b-tt0/songkick-scraper.git
+[submodule "python_logic/Master"]
+	path = python_logic/Master
+	url = https://github.com/michael-b-tt0/Master_concert_scraper.git
