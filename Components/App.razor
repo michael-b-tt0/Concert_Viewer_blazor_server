@@ -13,7 +13,8 @@
     <HeadOutlet />
 </head>
 
-<body>
+@* Use the app's own global styles; Fluent's defaults lock body scrolling. *@
+<body no-fuib-style>
     <Routes />
     <ReconnectModal />
     <script src="@Assets["terminal-output.js"]"></script>

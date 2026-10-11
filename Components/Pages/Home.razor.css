@@ -172,7 +172,8 @@
 .home-shell ::deep .events-grid {
     width: 100%;
     border-radius: var(--cv-radius-lg);
-    overflow: hidden;
+    /* Allow tall multiline rows to participate in normal page scrolling. */
+    overflow: visible;
     border: 1px solid var(--cv-border);
     box-shadow: var(--cv-shadow);
     background: var(--cv-bg-raised);
