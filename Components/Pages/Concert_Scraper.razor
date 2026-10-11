@@ -21,26 +21,28 @@
 
     <section class="scraper-controls" aria-label="Scraper controls">
         <div class="date-fields">
-            <FluentDatePicker Label="From date"
+            <FluentDatePicker TValue="DateTime?" Label="From date"
                               Width="170px"
                               Disabled="@isRunning"
                               @bind-Value="@fromDate" />
 
-            <FluentDatePicker Label="Until date"
+            <FluentDatePicker TValue="DateTime?" Label="Until date"
                               Width="170px"
                               Disabled="@isRunning"
                               @bind-Value="@untilDate" />
 
             <div class="field-group">
-                <label class="field-label" for="bit-auth">Bandsintown bit_auth cookie</label>
-                <input id="bit-auth"
-                       class="bit-auth-input"
-                       type="password"
-                       autocomplete="off"
-                       spellcheck="false"
-                       disabled="@isRunning"
-                       @bind="bitAuth" />
-                <span class="field-hint">Enter the cookie value or bit_auth=value.</span>
+                <FluentTextInput Id="bit-auth"
+                                 Class="bit-auth-input"
+                                 Label="Bandsintown bit_auth cookie"
+                                 TextInputType="TextInputType.Text"
+                                 AutoComplete="off"
+                                 Spellcheck="false"
+                                 Disabled="@isRunning"
+                                 Width="100%"
+                                 aria-describedby="bit-auth-hint"
+                                 @bind-Value="bitAuth" />
+                <span id="bit-auth-hint" class="field-hint">Enter the cookie value or bit_auth=value.</span>
             </div>
         </div>
 

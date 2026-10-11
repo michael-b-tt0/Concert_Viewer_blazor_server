@@ -80,36 +80,25 @@
     letter-spacing: 0.08em;
 }
 
-.date-select {
+.home-shell ::deep .date-select {
     display: block;
     min-width: min(24rem, 80vw);
-    --accent-fill-rest: rgba(94, 196, 255, 0.1);
-    --accent-fill-hover: rgba(94, 196, 255, 0.16);
-    --accent-fill-active: rgba(94, 196, 255, 0.2);
-    --neutral-fill-input-rest: rgba(18, 32, 43, 0.96);
-    --neutral-fill-input-hover: rgba(22, 39, 54, 0.98);
-    --neutral-fill-input-active: rgba(22, 39, 54, 1);
-    --neutral-fill-stealth-rest: rgba(18, 32, 43, 0.96);
-    --neutral-fill-layer-rest: rgba(14, 25, 34, 0.98);
-    --neutral-fill-layer-alt: rgba(18, 32, 43, 0.98);
-    --neutral-stroke-input-rest: var(--cv-border-strong);
-    --neutral-stroke-input-hover: rgba(94, 196, 255, 0.28);
-    --neutral-stroke-input-active: var(--cv-accent);
-    --neutral-foreground-rest: rgba(255, 255, 255, 0.96);
-    --neutral-foreground-hover: var(--cv-text);
-    --neutral-foreground-active: var(--cv-text);
-    --neutral-foreground-hint: var(--cv-text-muted);
-    --focus-stroke-outer: rgba(94, 196, 255, 0.16);
-    --focus-stroke-inner: var(--cv-accent);
-    --corner-radius: 16px;
-    --type-ramp-base-font-size: 0.98rem;
-    --type-ramp-base-font-weight: 650;
-    --type-ramp-base-line-height: 1.3;
+    --colorNeutralBackground1: var(--cv-bg-card-solid);
+    --colorNeutralBackground1Hover: #162736;
+    --colorNeutralBackground1Pressed: #162736;
+    --colorNeutralForeground1: var(--cv-text);
+    --colorNeutralForeground2: var(--cv-text-muted);
+    --colorNeutralForeground3: var(--cv-accent);
+    --colorNeutralStroke1: var(--cv-border-strong);
+    --colorNeutralStroke1Hover: rgba(94, 196, 255, 0.28);
+    --colorCompoundBrandStroke: var(--cv-accent);
+    --colorCompoundBrandStrokeHover: var(--cv-accent);
+    --colorCompoundBrandStrokePressed: var(--cv-accent);
+    --borderRadiusMedium: var(--cv-radius);
 }
 
-.date-select::part(control) {
+.home-shell ::deep .date-select fluent-dropdown {
     min-height: 3.25rem;
-    padding-inline: 1rem 0.9rem;
     border-radius: var(--cv-radius);
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
@@ -117,7 +106,7 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 24px rgba(0, 0, 0, 0.14);
 }
 
-.date-select::part(selected-value) {
+.home-shell ::deep .date-select fluent-dropdown button[slot="control"] {
     color: var(--cv-text);
     font-size: 1.08rem;
     font-weight: 750;
@@ -126,11 +115,7 @@
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-.date-select::part(indicator) {
-    color: var(--cv-accent);
-}
-
-.date-select::part(listbox) {
+.home-shell ::deep .date-select fluent-listbox {
     background: rgba(13, 27, 39, 0.98);
     border: 1px solid rgba(94, 196, 255, 0.18);
     border-radius: calc(var(--cv-radius) + 0.2rem);
@@ -184,22 +169,17 @@
 
 /* ── FluentDataGrid — Row Demarcation ─────────────────────────────── */
 
-.events-grid {
+.home-shell ::deep .events-grid {
     width: 100%;
     border-radius: var(--cv-radius-lg);
     overflow: hidden;
     border: 1px solid var(--cv-border);
     box-shadow: var(--cv-shadow);
-}
-
-/* Grid background */
-.events-grid::part(table) {
     background: var(--cv-bg-raised);
 }
 
 /* Header row */
-.events-grid fluent-data-grid-row[row-type="header"],
-.events-grid fluent-data-grid-row:first-child {
+.home-shell ::deep .events-grid thead th {
     background: var(--cv-bg-raised) !important;
     border-bottom: 2px solid var(--cv-accent) !important;
     position: sticky !important;
@@ -207,48 +187,47 @@
     z-index: 10 !important;
 }
 
-.events-grid fluent-data-grid-row[row-type="header"] fluent-data-grid-cell,
-.events-grid fluent-data-grid-row:first-child fluent-data-grid-cell {
+.home-shell ::deep .events-grid thead th [col-title-text] {
     background: var(--cv-bg-raised) !important;
     color: #ffffff !important;
     font-weight: 800 !important;
     font-size: 0.8rem !important;
     letter-spacing: 0.08em !important;
     text-transform: uppercase !important;
-    border-bottom: 2px solid var(--cv-accent) !important;
 }
 
 
 /* All data rows — bottom border for demarcation */
-.events-grid fluent-data-grid-row:not([row-type="header"]) {
+.home-shell ::deep .events-grid tbody tr {
     border-bottom: 1px solid var(--cv-border) !important;
     border-left: 3px solid transparent !important;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 /* Alternating row backgrounds */
-.events-grid fluent-data-grid-row:not([row-type="header"]):nth-child(even) {
+.home-shell ::deep .events-grid tbody tr:nth-child(even) {
     background: rgba(255, 255, 255, 0.02) !important;
 }
 
-.events-grid fluent-data-grid-row:not([row-type="header"]):nth-child(odd) {
+.home-shell ::deep .events-grid tbody tr:nth-child(odd) {
     background: transparent !important;
 }
 
 /* Row hover — left accent stripe + subtle highlight */
-.events-grid fluent-data-grid-row:not([row-type="header"]):hover {
+.home-shell ::deep .events-grid tbody tr:hover {
     background: rgba(94, 196, 255, 0.04) !important;
     border-left-color: var(--cv-accent) !important;
 }
 
 /* Cell padding for breathing room */
-.events-grid fluent-data-grid-cell {
+.home-shell ::deep .events-grid td {
     padding: 0.85rem 0.75rem !important;
     color: var(--cv-text) !important;
     border-right: 1px solid var(--cv-border-subtle) !important;
+    border-bottom-color: var(--cv-border) !important;
 }
 
-.events-grid fluent-data-grid-cell:last-child {
+.home-shell ::deep .events-grid td:last-child {
     border-right: none !important;
 }
 
@@ -414,7 +393,7 @@
         padding: 1.75rem 1.5rem;
     }
 
-    .date-select {
+    .home-shell ::deep .date-select {
         min-width: 100%;
     }
 
