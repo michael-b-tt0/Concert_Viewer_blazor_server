@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" Version="5.0.0" />
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.DataGrid.ODataAdapter" Version="5.0.0" />
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="5.0.0" />
+    <PackageReference Include="YTMusicAPI" Version="1.0.10" />
   </ItemGroup>
 
   <ItemGroup>
