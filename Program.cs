@@ -42,7 +42,17 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AppAuthenticationService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
-builder.Services.AddScoped<PythonRunnerService>();
+builder.Services.AddSingleton<OperationGate>();
+builder.Services.AddSingleton<PythonRunnerService>();
+builder.Services.AddHttpClient<TavilyResearchClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.tavily.com/");
+    client.Timeout = TimeSpan.FromSeconds(120);
+});
+builder.Services.AddSingleton<YTMusicAPI.Abstraction.ISearchClient, YTMusicAPI.SearchClient>();
+builder.Services.AddSingleton<YouTubeMusicEnricher>();
+builder.Services.AddSingleton<CorrectionWorker>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<CorrectionWorker>());
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 

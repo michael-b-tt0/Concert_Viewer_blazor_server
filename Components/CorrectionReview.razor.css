@@ -1,0 +1,14 @@
+.correction-dialog { width: min(1100px, 94vw); max-height: 88vh; border: 1px solid #738091; border-radius: 12px; padding: 24px; color: #192331; background: #fff; box-shadow: 0 16px 64px #0005; }
+.correction-dialog::backdrop { background: #101827aa; }
+.comparison-scroll { overflow-x: auto; }
+.correction-comparison { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { text-align: left; vertical-align: top; padding: 12px; border: 1px solid #ccd3dd; white-space: pre-wrap; overflow-wrap: anywhere; }
+th:first-child { width: 15%; }
+.changed { background: #eef6ff; }
+.correction-status, .correction-warning { padding: 12px; background: #fff4d6; color: #47350b; border-radius: 6px; }
+.correction-error { padding: 12px; background: #ffeded; color: #8b1515; border-radius: 6px; }
+.correction-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+button { padding: 10px 18px; border: 1px solid #62728a; border-radius: 6px; cursor: pointer; }
+.correction-actions button:last-child { background: #174c94; color: white; }
+button:disabled { opacity: .6; cursor: wait; }
+details { margin-top: 16px; overflow-wrap: anywhere; }

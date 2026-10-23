@@ -1,0 +1,149 @@
+@implements IAsyncDisposable
+@inject CorrectionWorker Corrections
+@inject AuthenticationStateProvider AuthenticationState
+@inject IJSRuntime JS
+@inject ILogger<CorrectionReview> Logger
+
+@if (browserError is not null)
+{
+    <div class="correction-error" role="alert">@browserError</div>
+}
+
+@if (job is { Status: "Researching" or "Enriching artist links" })
+{
+    <div class="correction-status" role="status">@job.Status: @(job.Before?.Title ?? "event")… You can refresh this page without losing progress.</div>
+}
+@if (job is { Status: "Failed" })
+{
+    <div class="correction-error" role="alert">
+        @job.Error
+        <button type="button" @onclick="Dismiss">Dismiss</button>
+    </div>
+}
+<dialog @ref="dialog" class="correction-dialog" aria-labelledby="correction-title">
+    @if (job is { Status: "Ready for review", Before: not null, After: not null })
+    {
+        <h2 id="correction-title">Review AI corrections</h2>
+        <p>@job.Before.Title · @job.Date (date unchanged)</p>
+        <p>Accept all changes or reject the proposal. Artist changes also apply to other events sharing those artists.</p>
+        @if (job.After.Artists.Count == 0)
+        {
+            <p class="correction-error" role="alert"><strong>Accepting will remove every performer from this event.</strong></p>
+        }
+        @foreach (var warning in job.Warnings ?? [])
+        {
+            <p class="correction-warning">@warning</p>
+        }
+        <div class="comparison-scroll">
+            <table class="correction-comparison">
+                <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
+                <tbody>
+                    @foreach (var row in Rows(job.Before, job.After))
+                    {
+                        <tr class="@(row.Before != row.After ? "changed" : "")">
+                            <th scope="row">@row.Label</th><td>@row.Before</td><td>@row.After</td>
+                        </tr>
+                    }
+                    <tr><th scope="row">Performers and links</th>
+                        <td><CorrectionArtists Artists="job.Before.Artists" /></td>
+                        <td><CorrectionArtists Artists="job.After.Artists" /></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        @if (job.Sources is { Count: > 0 })
+        {
+            <details><summary>Research sources</summary><ul>
+                @foreach (var source in job.Sources)
+                {
+                    <li><a href="@source" target="_blank" rel="noopener noreferrer">@source</a></li>
+                }
+            </ul></details>
+        }
+        @if (error is not null) { <p class="correction-error" role="alert">@error</p> }
+        <div class="correction-actions">
+            <button type="button" disabled="@saving" autofocus @onclick="() => Decide(false)">Reject</button>
+            <button type="button" disabled="@saving" @onclick="() => Decide(true)">@(saving ? "Saving…" : "Accept all changes")</button>
+        </div>
+    }
+</dialog>
+
+@code {
+    [Parameter] public EventCallback OnAccepted { get; set; }
+    private CorrectionJob? job;
+    private ElementReference dialog;
+    private IJSObjectReference? module;
+    private readonly CancellationTokenSource cancellation = new();
+    private Task? polling;
+    private bool saving;
+    private string? error;
+    private long lastDiagnosticSequence;
+    private string? browserError;
+    protected override void OnInitialized() { job = Corrections.Current; polling = Poll(); }
+    private async Task Poll()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            while (await timer.WaitForNextTickAsync(cancellation.Token))
+                await InvokeAsync(() => { job = Corrections.Current; StateHasChanged(); });
+        }
+        catch (OperationCanceledException) { }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./correctionReview.js");
+            await module.InvokeVoidAsync("setOpen", dialog, job?.Status == "Ready for review");
+            var entries = Corrections.DiagnosticsAfter(lastDiagnosticSequence);
+            if (entries.Length > 0)
+            {
+                // The cast keeps this array as ONE argument instead of expanding params object[].
+                await module.InvokeVoidAsync("logDiagnostics", (object)entries);
+                lastDiagnosticSequence = entries[^1].Sequence;
+            }
+            if (browserError is not null) { browserError = null; StateHasChanged(); }
+        }
+        catch (JSDisconnectedException) { }
+        catch (OperationCanceledException) { }
+        catch (JSException ex)
+        {
+            if (browserError is null)
+            {
+                Logger.LogError(ex, "AI correction browser UI or diagnostic logging failed.");
+                browserError = "The correction browser interface could not update. Refresh this page to reconnect to the current research job.";
+                StateHasChanged();
+            }
+        }
+    }
+    private async Task Decide(bool accept)
+    {
+        if (job is null || saving) return;
+        saving = true; error = null;
+        try
+        {
+            await Corrections.DecideAsync(job.Id, accept, (await AuthenticationState.GetAuthenticationStateAsync()).User);
+            job = Corrections.Current;
+            if (accept) await OnAccepted.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            error = "Could not apply this decision. No partial changes were saved. Please retry or reject the proposal.";
+            await JS.InvokeVoidAsync("console.error", $"[AI corrections] Review action failed: {ex.GetType().Name}. See the job diagnostics for details.");
+        }
+        finally { saving = false; }
+    }
+    private void Dismiss() { if (job is not null) Corrections.DismissFailure(job.Id); job = Corrections.Current; }
+    private static (string Label, string? Before, string? After)[] Rows(EventCorrection before, EventCorrection after) =>
+    [ ("Title", before.Title, after.Title), ("Venue", before.Venue, after.Venue),
+      ("City", before.City, after.City), ("Description", before.Description, after.Description) ];
+    public async ValueTask DisposeAsync()
+    {
+        cancellation.Cancel();
+        if (polling is not null) await polling;
+        cancellation.Dispose();
+        if (module is not null)
+            try { await module.DisposeAsync(); } catch (JSDisconnectedException) { }
+    }
+}

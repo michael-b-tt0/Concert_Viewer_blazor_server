@@ -1,0 +1,25 @@
+@using System.Text.Json
+@if (Artists.Count == 0) { <span>No performers</span> }
+@foreach (var artist in Artists)
+{
+    <section class="review-artist">
+        <strong>@artist.Name</strong>
+        <ul>
+            @foreach (var link in Links(artist))
+            {
+                <li><a href="@link.Url" target="_blank" rel="noopener noreferrer">@(link.Label ?? link.Platform): @link.Url</a></li>
+            }
+        </ul>
+    </section>
+}
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ArtistCorrection> Artists { get; set; } = [];
+    private static IEnumerable<SocialLink> Links(ArtistCorrection artist)
+    {
+        List<SocialLink> links;
+        try { links = JsonSerializer.Deserialize<List<SocialLink>>(artist.SocialLinks ?? "[]") ?? []; }
+        catch (JsonException) { links = []; }
+        if (artist.YouTubeUrl is not null) links.Add(new("YouTube", artist.YouTubeUrl));
+        return links.Where(l => l is not null && CorrectionWorker.IsWebUrl(l.Url)).DistinctBy(l => l.Url);
+    }
+}

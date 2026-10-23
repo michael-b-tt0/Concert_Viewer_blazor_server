@@ -1,7 +1,7 @@
 .home-shell {
-    max-width: 1440px;
+    max-width: none;
     margin: 0 auto;
-    padding: 2rem 1.75rem 3rem;
+    padding: 2rem 13rem 3rem;
 }
 
 /* ── Hero ─────────────────────────────────────────────────────────── */
@@ -233,6 +233,14 @@
 }
 
 /* ── Event cells ──────────────────────────────────────────────────── */
+
+.event-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
 
 .image-link {
     display: inline-flex;

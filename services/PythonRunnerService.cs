@@ -10,17 +10,20 @@ public sealed class PythonRunnerService : IAsyncDisposable
     private readonly ILogger<PythonRunnerService> _logger;
     private readonly object _syncRoot = new();
 
+    private readonly OperationGate _gate;
     private Process? _process;
+    private Task? _monitorTask;
     private CancellationTokenSource? _processCancellation;
 
     public PythonRunnerService(
         IWebHostEnvironment environment,
         IConfiguration configuration,
-        ILogger<PythonRunnerService> logger)
+        ILogger<PythonRunnerService> logger, OperationGate gate)
     {
         _environment = environment;
         _configuration = configuration;
         _logger = logger;
+        _gate = gate;
     }
 
     public event Action<PythonRunnerOutput>? OutputReceived;
@@ -55,39 +58,45 @@ public sealed class PythonRunnerService : IAsyncDisposable
                 throw new InvalidOperationException("A scraper run is already in progress.");
             }
 
-            _process?.Dispose();
-            _processCancellation?.Dispose();
-            _processCancellation = new CancellationTokenSource();
-
-            var scriptPath = ResolveScriptPath();
-            var masterDirectory = Path.GetDirectoryName(scriptPath)
-                ?? throw new InvalidOperationException("The scraper working directory could not be resolved.");
-            var databasePath = Path.Combine(_environment.ContentRootPath, "concerts.db");
-            var appSettingsPath = Path.Combine(_environment.ContentRootPath, "appsettings.json");
-
-            var process = new Process
+            var lease = _gate.Enter("the scraper/importer run");
+            try
             {
-                StartInfo = BuildStartInfo(
-                    masterDirectory,
-                    scriptPath,
-                    databasePath,
-                    appSettingsPath,
-                    fromDate,
-                    untilDate,
-                    city,
-                    bitAuth),
-                EnableRaisingEvents = true
-            };
+                _process?.Dispose();
+                _processCancellation?.Dispose();
+                _processCancellation = new CancellationTokenSource();
 
-            if (!process.Start())
-            {
-                process.Dispose();
-                throw new InvalidOperationException("Python process could not be started.");
+                var scriptPath = ResolveScriptPath();
+                var masterDirectory = Path.GetDirectoryName(scriptPath)
+                    ?? throw new InvalidOperationException("The scraper working directory could not be resolved.");
+                var databasePath = Path.Combine(_environment.ContentRootPath, "concerts.db");
+                var appSettingsPath = Path.Combine(_environment.ContentRootPath, "appsettings.json");
+
+                var process = new Process
+                {
+                    StartInfo = BuildStartInfo(
+                        masterDirectory,
+                        scriptPath,
+                        databasePath,
+                        appSettingsPath,
+                        fromDate,
+                        untilDate,
+                        city,
+                        bitAuth),
+                    EnableRaisingEvents = true
+                };
+
+                if (!process.Start())
+                {
+                    process.Dispose();
+                    throw new InvalidOperationException("Python process could not be started.");
+                }
+
+                _process = process;
+                Emit(PythonRunnerOutput.System($"Started scraper process {process.Id}."));
+                var token = _processCancellation.Token;
+                _monitorTask = Task.Run(() => MonitorProcessAsync(process, token, lease));
             }
-
-            _process = process;
-            Emit(PythonRunnerOutput.System($"Started scraper process {process.Id}."));
-            _ = Task.Run(() => MonitorProcessAsync(process, _processCancellation.Token));
+            catch { lease.Dispose(); throw; }
         }
 
         return Task.CompletedTask;
@@ -131,6 +140,7 @@ public sealed class PythonRunnerService : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await StopAsync();
+        if (_monitorTask is not null) await _monitorTask;
 
         lock (_syncRoot)
         {
@@ -244,7 +254,7 @@ public sealed class PythonRunnerService : IAsyncDisposable
             $"The scraper entrypoint could not be found. Checked:{Environment.NewLine}{attemptedLocations}");
     }
 
-    private async Task MonitorProcessAsync(Process process, CancellationToken cancellationToken)
+    private async Task MonitorProcessAsync(Process process, CancellationToken cancellationToken, IDisposable lease)
     {
         try
         {
@@ -268,6 +278,13 @@ public sealed class PythonRunnerService : IAsyncDisposable
         }
         finally
         {
+            // Do not release the write gate until the Python process has really exited.
+            try
+            {
+                if (!process.HasExited) process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync();
+            }
+            finally { lease.Dispose(); }
             lock (_syncRoot)
             {
                 if (ReferenceEquals(_process, process))
@@ -297,7 +314,12 @@ public sealed class PythonRunnerService : IAsyncDisposable
 
     private void Emit(PythonRunnerOutput output)
     {
-        OutputReceived?.Invoke(output);
+        if (OutputReceived is not { } handlers) return;
+        foreach (Action<PythonRunnerOutput> handler in handlers.GetInvocationList())
+        {
+            try { handler(output); }
+            catch (Exception ex) { _logger.LogDebug(ex, "Scraper output subscriber disconnected."); }
+        }
     }
 }
 

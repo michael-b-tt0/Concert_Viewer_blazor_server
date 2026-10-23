@@ -1,4 +1,9 @@
 @page "/"
+@implements IDisposable
+@inject OperationGate OperationGate
+@inject CorrectionWorker Corrections
+@inject AuthenticationStateProvider AuthenticationState
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 @using Concert_Viewer.Data
 @using System.Net
@@ -7,6 +12,11 @@
 @inject IDbContextFactory<ConcertsContext> DbContextFactory
 
 <PageTitle>Concert Viewer</PageTitle>
+<CorrectionReview OnAccepted="LoadEventsAsync" />
+@if (OperationGate.IsBusy)
+{
+    <p role="status">Busy: @OperationGate.Operation. Changes are disabled until it finishes.</p>
+}
 
 <div class="home-shell">
     <section class="hero">
@@ -65,7 +75,7 @@
                         ResizableColumns="true"
                         RowSize="DataGridRowSize.Medium"
                         Class="events-grid">
-            <TemplateColumn Title="Title">
+            <TemplateColumn Title="Title" Width="220px">
                 <div class="event-title-cell">
                     <span class="event-title">@context.EventTitle</span>
                     <span class="event-location">@context.Venue</span>
@@ -136,13 +146,25 @@
                     </ul>
                 }
             </TemplateColumn>
-            <TemplateColumn Title="Actions" Align="DataGridCellAlignment.End">
-                <FluentButton Appearance="ButtonAppearance.Subtle"
-                              Disabled="@isDeletingEvent"
-                              Title="Double-click to delete"
-                              @ondblclick="() => DeleteEventAsync(context)">
-                    Delete
-                </FluentButton>
+            <TemplateColumn Title="Actions" Width="100px" Align="DataGridCellAlignment.End">
+                @{
+                    var correction = Corrections.Current;
+                    var isResearching = correction is { Status: "Researching" or "Enriching artist links" }
+                        && correction.EventId == context.Id;
+                }
+                <div class="event-actions">
+                    <FluentButton Loading="@isResearching"
+                                  Disabled="@OperationGate.IsBusy"
+                                  OnClick="@(() => ResearchAsync(context.Id))">
+                        @(isResearching ? $"{correction!.Status}…" : "Research corrections with AI")
+                    </FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Subtle"
+                                  Disabled="@(isDeletingEvent || OperationGate.IsBusy)"
+                                  Title="Double-click to delete"
+                                  @ondblclick="() => DeleteEventAsync(context)">
+                        Delete
+                    </FluentButton>
+                </div>
             </TemplateColumn>
         </FluentDataGrid>
     }
@@ -164,6 +186,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _ = WatchOperationsAsync();
         await LoadAvailableDatesAsync();
     }
 
@@ -261,6 +284,38 @@
         }
     }
 
+    private readonly CancellationTokenSource watchCancellation = new();
+    private long correctionRevision;
+    private async Task WatchOperationsAsync()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            while (await timer.WaitForNextTickAsync(watchCancellation.Token))
+                await InvokeAsync(async () =>
+                {
+                    if (correctionRevision != Corrections.Revision)
+                    {
+                        correctionRevision = Corrections.Revision;
+                        await LoadEventsAsync();
+                    }
+                    StateHasChanged();
+                });
+        }
+        catch (OperationCanceledException) { }
+    }
+    public void Dispose() { watchCancellation.Cancel(); watchCancellation.Dispose(); }
+    private async Task ResearchAsync(int id)
+    {
+        await JSRuntime.InvokeVoidAsync("console.info", $"[AI corrections] Research button clicked for event {id}.");
+        try { Corrections.Start(id, (await AuthenticationState.GetAuthenticationStateAsync()).User); }
+        catch (Exception ex)
+        {
+            loadError = ex.Message;
+            await JSRuntime.InvokeVoidAsync("console.error", $"[AI corrections] Could not start research for event {id}: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
     private async Task DeleteEventAsync(EventListItem item)
     {
         isDeletingEvent = true;
@@ -268,6 +323,7 @@
 
         try
         {
+            using var lease = OperationGate.Enter("event deletion");
             await using var db = await DbContextFactory.CreateDbContextAsync();
 
             var eventToDelete = await db.CanonicalEvents

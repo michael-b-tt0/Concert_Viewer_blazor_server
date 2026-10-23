@@ -132,28 +132,6 @@
     --borderRadiusMedium: var(--cv-radius);
 }
 
-.field-group ::deep .bit-auth-input fluent-text-input::part(root) {
-    box-sizing: border-box;
-    height: auto;
-    min-height: 2.25rem;
-    padding: 0.4rem 0.65rem;
-    border: 1px solid var(--cv-border-strong);
-    border-radius: var(--cv-radius);
-    background: var(--cv-bg-card-solid);
-    color: var(--cv-text);
-    font: inherit;
-}
-
-.field-group ::deep .bit-auth-input fluent-text-input::part(control) {
-    padding: 0;
-    font: inherit;
-}
-
-.field-group ::deep .bit-auth-input fluent-text-input:focus-within::part(root) {
-    outline: 2px solid var(--cv-accent);
-    outline-offset: 2px;
-}
-
 /* ── Messages ─────────────────────────────────────────────────────── */
 
 .scraper-message {

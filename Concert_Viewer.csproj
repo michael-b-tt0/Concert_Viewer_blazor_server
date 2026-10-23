@@ -9,10 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
-    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" Version="5.0.0" />
-    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.DataGrid.ODataAdapter" Version="5.0.0" />
-    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="5.0.0" />
+    <Compile Remove="tests\**\*.cs" />
+    <Content Remove="tests\**" />
+    <None Remove="tests\**" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" Version="5.0.1" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.DataGrid.ODataAdapter" Version="5.0.1" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="5.0.1" />
     <PackageReference Include="YTMusicAPI" Version="1.0.10" />
   </ItemGroup>
 

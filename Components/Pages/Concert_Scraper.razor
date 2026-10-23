@@ -2,9 +2,15 @@
 @rendermode InteractiveServer
 @implements IDisposable
 @inject PythonRunnerService PythonRunner
+@inject OperationGate OperationGate
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Concert Scraper</PageTitle>
+<CorrectionReview />
+@if (OperationGate.IsBusy)
+{
+    <p role="status">Busy: @OperationGate.Operation.</p>
+}
 
 <div class="scraper-shell">
     <section class="scraper-header">
@@ -126,10 +132,11 @@
     private bool shouldAutoScroll;
     private ElementReference terminalOutput;
 
-    private bool CanStart => !isRunning && fromDate.HasValue;
+    private bool CanStart => !isRunning && !OperationGate.IsBusy && fromDate.HasValue;
 
     protected override void OnInitialized()
     {
+        _ = WatchGateAsync();
         isRunning = PythonRunner.IsRunning;
         PythonRunner.OutputReceived += OnOutputReceived;
         PythonRunner.ProcessExited += OnProcessExited;
@@ -255,7 +262,21 @@
 
     public void Dispose()
     {
+        watchCancellation.Cancel();
+        watchCancellation.Dispose();
         PythonRunner.OutputReceived -= OnOutputReceived;
         PythonRunner.ProcessExited -= OnProcessExited;
+    }
+
+    private readonly CancellationTokenSource watchCancellation = new();
+    private async Task WatchGateAsync()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            while (await timer.WaitForNextTickAsync(watchCancellation.Token))
+                await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException) { }
     }
 }
